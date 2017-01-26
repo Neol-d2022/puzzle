@@ -520,10 +520,8 @@ int main(int argc, char **argv)
         if (strcmp("level", argv[argci]) == 0 && (argci + 1 < argc))
         {
             sscanf(argv[argci + 1], "%u", &LEVEL);
-            if (LEVEL > LEVELMAX - 1)
-                LEVEL = LEVELMAX - 1;
-            if (LEVEL == 0)
-                LEVEL = 1;
+            if (LEVEL > LEVELMAX)
+                LEVEL = LEVELMAX;
             argci += 1;
         }
 
