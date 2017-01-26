@@ -543,8 +543,6 @@ int main(int argc, char **argv)
 
     printf("SIZE = %u\n", PUZZLE_SIZE);
     printf("LEVEL = %u\n", LEVEL);
-    memset(&goal, 0, PUZZLE_SIZE * PUZZLE_SIZE);
-    memset(&input, 0, PUZZLE_SIZE * PUZZLE_SIZE);
     printf("Input puzzle for GOAL:\n");
     if ((r = GetPlate(&goal, stdin)))
         return r;
@@ -557,7 +555,7 @@ int main(int argc, char **argv)
 
     //DB = (DB_MAX >> 2) - 1;
     d = DecisionBankAdd(dbank);
-    memcpy(d->p, &input, PUZZLE_SIZE * PUZZLE_SIZE);
+    memcpy(d->p->s, input.s, PUZZLE_SIZE * PUZZLE_SIZE);
     d->h = CalcDis(d->p, &goal);
     AddPlate(plates, d->p);
     EnqueuePQ(pq, d);
