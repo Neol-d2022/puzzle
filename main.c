@@ -577,7 +577,7 @@ void* doWork(void *arg) {
 
         if (d->h == 0)
         {
-            while(pthread_rwlock_trywrlock(w->exitLock));
+            pthread_rwlock_wrlock(w->exitLock);
             if(*(w->exiting) == 0) {
                 *(w->exiting) = 1;
                 w->dOutput = d;
@@ -654,17 +654,21 @@ void* doWork(void *arg) {
                 pthread_mutex_unlock(w->outputLock);
             }
 
-            while(pthread_rwlock_trywrlock(w->platesLock));
+            while(pthread_rwlock_tryrdlock(w->platesLock));
             findResult = FindPlate(plates, plate);
+            pthread_rwlock_unlock(w->platesLock);
+
             if (!findResult)
             {
-                while(pthread_rwlock_trywrlock(w->pqLock));
+                while(pthread_rwlock_trywrlock(w->platesLock));
                 AddPlate(plates, plate);
                 next = DecisionBankAdd(dbank);
+                pthread_rwlock_unlock(w->platesLock);
                 findResult = plate; plate = next->p; next->p = findResult;
                 next->h = CalcDis(next->p, w->goal);
                 next->parent = d;
                 next->nparents = d->nparents + 1;
+                while(pthread_rwlock_trywrlock(w->pqLock));
                 EnqueuePQ(pq, next);
                 pthread_rwlock_unlock(w->pqLock);
                 if (w->debug)
@@ -683,7 +687,6 @@ void* doWork(void *arg) {
                     pthread_mutex_unlock(w->outputLock);
                 }
             }
-            pthread_rwlock_unlock(w->platesLock);
         }
 
         // Down
@@ -698,20 +701,23 @@ void* doWork(void *arg) {
                 pthread_mutex_unlock(w->outputLock);
             }
 
-            while(pthread_rwlock_trywrlock(w->platesLock));
+            while(pthread_rwlock_tryrdlock(w->platesLock));
             findResult = FindPlate(plates, plate);
+            pthread_rwlock_unlock(w->platesLock);
+
             if (!findResult)
             {
-                while(pthread_rwlock_trywrlock(w->pqLock));
+                while(pthread_rwlock_trywrlock(w->platesLock));
                 AddPlate(plates, plate);
                 next = DecisionBankAdd(dbank);
+                pthread_rwlock_unlock(w->platesLock);
                 findResult = plate; plate = next->p; next->p = findResult;
                 next->h = CalcDis(next->p, w->goal);
                 next->parent = d;
                 next->nparents = d->nparents + 1;
+                while(pthread_rwlock_trywrlock(w->pqLock));
                 EnqueuePQ(pq, next);
                 pthread_rwlock_unlock(w->pqLock);
-               
                 if (w->debug)
                 {
                     while(pthread_mutex_trylock(w->outputLock));
@@ -728,7 +734,6 @@ void* doWork(void *arg) {
                     pthread_mutex_unlock(w->outputLock);
                 }
             }
-            pthread_rwlock_unlock(w->platesLock);
         }
 
         // Left
@@ -743,17 +748,21 @@ void* doWork(void *arg) {
                 pthread_mutex_unlock(w->outputLock);
             }
 
-            while(pthread_rwlock_trywrlock(w->platesLock));
+            while(pthread_rwlock_tryrdlock(w->platesLock));
             findResult = FindPlate(plates, plate);
+            pthread_rwlock_unlock(w->platesLock);
+
             if (!findResult)
             {
-                while(pthread_rwlock_trywrlock(w->pqLock));
+                while(pthread_rwlock_trywrlock(w->platesLock));
                 AddPlate(plates, plate);
                 next = DecisionBankAdd(dbank);
+                pthread_rwlock_unlock(w->platesLock);
                 findResult = plate; plate = next->p; next->p = findResult;
                 next->h = CalcDis(next->p, w->goal);
                 next->parent = d;
                 next->nparents = d->nparents + 1;
+                while(pthread_rwlock_trywrlock(w->pqLock));
                 EnqueuePQ(pq, next);
                 pthread_rwlock_unlock(w->pqLock);
                 if (w->debug)
@@ -772,7 +781,6 @@ void* doWork(void *arg) {
                     pthread_mutex_unlock(w->outputLock);
                 }
             }
-            pthread_rwlock_unlock(w->platesLock);
         }
 
         // Right
@@ -787,19 +795,23 @@ void* doWork(void *arg) {
                 pthread_mutex_unlock(w->outputLock);
             }
 
-            while(pthread_rwlock_trywrlock(w->platesLock));
+            while(pthread_rwlock_tryrdlock(w->platesLock));
             findResult = FindPlate(plates, plate);
+            pthread_rwlock_unlock(w->platesLock);
+
             if (!findResult)
             {
-                while(pthread_rwlock_trywrlock(w->pqLock));
+                while(pthread_rwlock_trywrlock(w->platesLock));
                 AddPlate(plates, plate);
                 next = DecisionBankAdd(dbank);
+                pthread_rwlock_unlock(w->platesLock);
                 findResult = plate; plate = next->p; next->p = findResult;
                 next->h = CalcDis(next->p, w->goal);
                 next->parent = d;
                 next->nparents = d->nparents + 1;
+                while(pthread_rwlock_trywrlock(w->pqLock));
                 EnqueuePQ(pq, next);
-                while(pthread_rwlock_unlock(w->pqLock));
+                pthread_rwlock_unlock(w->pqLock);
                 if (w->debug)
                 {
                     while(pthread_mutex_trylock(w->outputLock));
@@ -816,7 +828,6 @@ void* doWork(void *arg) {
                     pthread_mutex_unlock(w->outputLock);
                 }
             }
-            pthread_rwlock_unlock(w->platesLock);
         }
     }
 
