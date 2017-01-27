@@ -3,6 +3,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "avl.h"
 
@@ -69,6 +70,10 @@ int cmpPQ(void *a, void *b)
     if (c->h + c->nparents - c->preference > d->h + d->nparents - d->preference)
         return -1;
     else if (c->h + c->nparents - c->preference < d->h + d->nparents - d->preference)
+        return 1;
+    else if (c->h + c->nparents > d->h + d->nparents)
+        return -1;
+    else if (c->h + c->nparents < d->h + d->nparents)
         return 1;
     else if (c->h > d->h)
         return -1;
@@ -665,7 +670,7 @@ void* doWork(void *arg) {
                 next->parent = d;
                 next->nparents = d->nparents + 1;
                 if(next->h < d->h) next->preference = d->preference + d->h - next->h;
-                else if(d->preference > next->h - d->h) next->preference = d->preference + d->h - next->h;
+                else if(d->preference > next->h - d->h + 1) next->preference = d->preference + d->h - next->h - 1;
                 while(pthread_rwlock_trywrlock(w->pqLock));
                 EnqueuePQ(pq, next);
                 pthread_rwlock_unlock(w->pqLock);
@@ -714,7 +719,7 @@ void* doWork(void *arg) {
                 next->parent = d;
                 next->nparents = d->nparents + 1;
                 if(next->h < d->h) next->preference = d->preference + d->h - next->h;
-                else if(d->preference > next->h - d->h) next->preference = d->preference + d->h - next->h;
+                else if(d->preference > next->h - d->h + 1) next->preference = d->preference + d->h - next->h - 1;
                 while(pthread_rwlock_trywrlock(w->pqLock));
                 EnqueuePQ(pq, next);
                 pthread_rwlock_unlock(w->pqLock);
@@ -763,7 +768,7 @@ void* doWork(void *arg) {
                 next->parent = d;
                 next->nparents = d->nparents + 1;
                 if(next->h < d->h) next->preference = d->preference + d->h - next->h;
-                else if(d->preference > next->h - d->h) next->preference = d->preference + d->h - next->h;
+                else if(d->preference > next->h - d->h + 1) next->preference = d->preference + d->h - next->h - 1;
                 while(pthread_rwlock_trywrlock(w->pqLock));
                 EnqueuePQ(pq, next);
                 pthread_rwlock_unlock(w->pqLock);
@@ -812,7 +817,7 @@ void* doWork(void *arg) {
                 next->parent = d;
                 next->nparents = d->nparents + 1;
                 if(next->h < d->h) next->preference = d->preference + d->h - next->h;
-                else if(d->preference > next->h - d->h) next->preference = d->preference + d->h - next->h;
+                else if(d->preference > next->h - d->h + 1) next->preference = d->preference + d->h - next->h - 1;
                 while(pthread_rwlock_trywrlock(w->pqLock));
                 EnqueuePQ(pq, next);
                 pthread_rwlock_unlock(w->pqLock);
@@ -858,6 +863,7 @@ int main(int argc, char **argv)
     AVL_TREE *plates = CreatePlates();
     STACK *stack = CreateStack();
     DESICISON *cur;
+    clock_t t;
     unsigned int i, min, max, nthreads = 1;
     //unsigned int lastH, lastN;
     int r, debug = 0, interact = 1, argci, exiting = 0;
@@ -901,7 +907,7 @@ int main(int argc, char **argv)
     printPlate(&input, stdout);
     printf("\n");
 
-    //DB = (DB_MAX >> 2) - 1;
+    t = clock();
     d = DecisionBankAdd(dbank);
     memcpy(d->p->s, input.s, PUZZLE_SIZE * PUZZLE_SIZE);
     d->h = CalcDis(d->p, &goal);
@@ -959,7 +965,7 @@ int main(int argc, char **argv)
         d = w.dOutput;
         if (debug)
             printPlate(d->p, stdout);
-        printf("Solution found.\n\n");
+        printf("Solution found (In %.3lf seconds).\n\n", (clock() - t) / (double)CLOCKS_PER_SEC);
         cur = d;
         while (cur)
         {
