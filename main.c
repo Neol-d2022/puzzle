@@ -285,14 +285,16 @@ unsigned int FindInPlate(const PLATE *p, unsigned int chr)
 
 unsigned int CalcLDis(PLATE *current, const PLATE *goal, unsigned int index)
 {
-    unsigned int x[2], i, j, minr, minc, k, l, m;
+    unsigned int x[2], i, j, maxr, maxc, minr, minc, k, l, m;
 
     D1ToD2(index, x, x + 1);
-    minr = (x[0] + 1 >= PUZZLE_SIZE) ? (PUZZLE_SIZE - 1) : x[0] + 1;
-    minc = (x[1] + 1 >= PUZZLE_SIZE) ? (PUZZLE_SIZE - 1) : x[1] + 1;
+    maxr = (x[0] + 1 >= PUZZLE_SIZE) ? (PUZZLE_SIZE - 1) : (x[0] + 1);
+    maxc = (x[1] + 1 >= PUZZLE_SIZE) ? (PUZZLE_SIZE - 1) : (x[1] + 1);
+    minr = (x[0] - 1 < PUZZLE_SIZE) ? (x[0] - 1) : 0;
+    minc = (x[1] - 1 < PUZZLE_SIZE) ? (x[1] - 1) : 0;
     k = 0;
-    for(i = x[0] - 1; i <= minr ; i += 1) {
-        for(j = x[1] - 1; j <= minc; j += 1) {
+    for(i = minr; i <= maxr ; i += 1) {
+        for(j = minc; j <= maxc; j += 1) {
             if(i == x[0] && j == x[1]) continue;
             l = FindInPlate(current, (goal->s)[i * PUZZLE_SIZE + j]);
             m = D2Diff(i * PUZZLE_SIZE + j, l);
