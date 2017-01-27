@@ -723,7 +723,7 @@ void* doWork(void *arg) {
                 next->parent = d;
                 next->nparents = d->nparents + 1;
                 if(next->h + next->ldis < d->h + d->ldis) next->preference = d->preference + d->h + d->ldis - next->h - next->ldis;
-                else if(d->preference > next->h - d->h + 1) next->preference = d->preference + d->h + d->ldis - next->h - next->ldis - 1;
+                else if(d->preference > next->h + next->ldis - d->h - d->ldis + 1) next->preference = d->preference + d->h + d->ldis - next->h - next->ldis - 1;
                 while(pthread_rwlock_trywrlock(w->pqLock));
                 EnqueuePQ(pq, next);
                 pthread_rwlock_unlock(w->pqLock);
@@ -773,7 +773,7 @@ void* doWork(void *arg) {
                 next->parent = d;
                 next->nparents = d->nparents + 1;
                 if(next->h + next->ldis < d->h + d->ldis) next->preference = d->preference + d->h + d->ldis - next->h - next->ldis;
-                else if(d->preference > next->h - d->h + 1) next->preference = d->preference + d->h + d->ldis - next->h - next->ldis - 1;
+                else if(d->preference > next->h + next->ldis - d->h - d->ldis + 1) next->preference = d->preference + d->h + d->ldis - next->h - next->ldis - 1;
                 while(pthread_rwlock_trywrlock(w->pqLock));
                 EnqueuePQ(pq, next);
                 pthread_rwlock_unlock(w->pqLock);
@@ -823,7 +823,7 @@ void* doWork(void *arg) {
                 next->parent = d;
                 next->nparents = d->nparents + 1;
                 if(next->h + next->ldis < d->h + d->ldis) next->preference = d->preference + d->h + d->ldis - next->h - next->ldis;
-                else if(d->preference > next->h - d->h + 1) next->preference = d->preference + d->h + d->ldis - next->h - next->ldis - 1;
+                else if(d->preference > next->h + next->ldis - d->h - d->ldis + 1) next->preference = d->preference + d->h + d->ldis - next->h - next->ldis - 1;
                 while(pthread_rwlock_trywrlock(w->pqLock));
                 EnqueuePQ(pq, next);
                 pthread_rwlock_unlock(w->pqLock);
@@ -873,7 +873,7 @@ void* doWork(void *arg) {
                 next->parent = d;
                 next->nparents = d->nparents + 1;
                 if(next->h + next->ldis < d->h + d->ldis) next->preference = d->preference + d->h + d->ldis - next->h - next->ldis;
-                else if(d->preference > next->h - d->h + 1) next->preference = d->preference + d->h + d->ldis - next->h - next->ldis - 1;
+                else if(d->preference > next->h + next->ldis - d->h - d->ldis + 1) next->preference = d->preference + d->h + d->ldis - next->h - next->ldis - 1;
                 while(pthread_rwlock_trywrlock(w->pqLock));
                 EnqueuePQ(pq, next);
                 pthread_rwlock_unlock(w->pqLock);
