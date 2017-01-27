@@ -557,10 +557,10 @@ void* doWork(void *arg) {
                 *(w->max) = d->h;
 
             if(w->debug) {
-                s = printf("(%i) mindis=%u maxdis=%u dis=%u Qsize=%u Psize=%u steps=%u\n", (int)pthread_self(), *(w->min), *(w->max), d->h, pq->count, plates->count, d->nparents);
+                s = printf("minD=%u maxD=%u dis=%u Qsize=%u Psize=%u pref=%u steps=%u\n", *(w->min), *(w->max), d->h, pq->count, plates->count, d->preference, d->nparents);
             }
             else {
-                s = printf("mindis=%u maxdis=%u dis=%u Qsize=%u Psize=%u steps=%u ", *(w->min), *(w->max), d->h, pq->count, plates->count, d->nparents);
+                s = printf("minD=%u maxD=%u dis=%u Qsize=%u Psize=%u pref=%u steps=%u ", *(w->min), *(w->max), d->h, pq->count, plates->count, d->preference, d->nparents);
                 memset(buf, '\b', s);
                 buf[s] = '\0';
                 printf("%s", buf);
