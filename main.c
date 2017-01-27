@@ -11,8 +11,6 @@
 //#define DB_DROP_FACTOR 0.9
 
 unsigned int DB;
-#define LEVELMAX 100
-unsigned int LEVEL = LEVELMAX >> 1;
 unsigned int PUZZLE_SIZE = 3;
 
 typedef struct
@@ -26,6 +24,7 @@ typedef struct DESICISON_STRUCT
     struct DESICISON_STRUCT *parent;
     unsigned int h; //distance to goal
     unsigned int nparents;
+    unsigned int preference;
 } DESICISON;
 
 typedef struct
@@ -63,21 +62,13 @@ int cmpPlate(void *a, void *b)
 int cmpPQ(void *a, void *b)
 {
     DESICISON *c, *d;
-    //DESICISON **e, **f;
-
-    /*e = (DESICISON **)a;
-    f = (DESICISON **)b;*/
 
     c = (DESICISON *)a;
     d = (DESICISON *)b;
 
-    //if (c->h * (DB_MAX - DB) + c->nparents * DB > d->h * (DB_MAX - DB) + d->nparents * DB)
-    //    return -1;
-    //else if (c->h * (DB_MAX - DB) + c->nparents * DB < d->h * (DB_MAX - DB) + d->nparents * DB)
-    //    return 1;
-    if (c->h * (LEVELMAX - LEVEL) + c->nparents * LEVEL > d->h * (LEVELMAX - LEVEL) + d->nparents * LEVEL)
+    if (c->h + c->nparents - c->preference > d->h + d->nparents - d->preference)
         return -1;
-    else if (c->h * (LEVELMAX - LEVEL) + c->nparents * LEVEL < d->h * (LEVELMAX - LEVEL) + d->nparents * LEVEL)
+    else if (c->h + c->nparents - c->preference < d->h + d->nparents - d->preference)
         return 1;
     else if (c->h > d->h)
         return -1;
@@ -86,7 +77,7 @@ int cmpPQ(void *a, void *b)
     else if (c->nparents > d->nparents)
         return -1;
     else if (c->nparents < d->nparents)
-        return -1;
+        return 1;
     else
         return cmpPlate(c->p, d->p);
 }
@@ -130,6 +121,7 @@ void InitD(DESICISON *d)
     d->p = p;
     d->parent = 0;
     d->nparents = 0;
+    d->preference = 0;
 }
 
 void DeInitD(DESICISON *d)
@@ -672,6 +664,8 @@ void* doWork(void *arg) {
                 next->h = CalcDis(next->p, w->goal);
                 next->parent = d;
                 next->nparents = d->nparents + 1;
+                if(next->h < d->h) next->preference = d->preference + 1;
+                else if(d->preference) next->preference = d->preference - 1;
                 while(pthread_rwlock_trywrlock(w->pqLock));
                 EnqueuePQ(pq, next);
                 pthread_rwlock_unlock(w->pqLock);
@@ -719,6 +713,8 @@ void* doWork(void *arg) {
                 next->h = CalcDis(next->p, w->goal);
                 next->parent = d;
                 next->nparents = d->nparents + 1;
+                if(next->h < d->h) next->preference = d->preference + 1;
+                else if(d->preference) next->preference = d->preference - 1;
                 while(pthread_rwlock_trywrlock(w->pqLock));
                 EnqueuePQ(pq, next);
                 pthread_rwlock_unlock(w->pqLock);
@@ -766,6 +762,8 @@ void* doWork(void *arg) {
                 next->h = CalcDis(next->p, w->goal);
                 next->parent = d;
                 next->nparents = d->nparents + 1;
+                if(next->h < d->h) next->preference = d->preference + 1;
+                else if(d->preference) next->preference = d->preference - 1;
                 while(pthread_rwlock_trywrlock(w->pqLock));
                 EnqueuePQ(pq, next);
                 pthread_rwlock_unlock(w->pqLock);
@@ -813,6 +811,8 @@ void* doWork(void *arg) {
                 next->h = CalcDis(next->p, w->goal);
                 next->parent = d;
                 next->nparents = d->nparents + 1;
+                if(next->h < d->h) next->preference = d->preference + 1;
+                else if(d->preference) next->preference = d->preference - 1;
                 while(pthread_rwlock_trywrlock(w->pqLock));
                 EnqueuePQ(pq, next);
                 pthread_rwlock_unlock(w->pqLock);
@@ -869,14 +869,6 @@ int main(int argc, char **argv)
             debug = 1;
         }
 
-        if (strcmp("level", argv[argci]) == 0 && (argci + 1 < argc))
-        {
-            sscanf(argv[argci + 1], "%u", &LEVEL);
-            if (LEVEL > LEVELMAX)
-                LEVEL = LEVELMAX;
-            argci += 1;
-        }
-
         if (strcmp("size", argv[argci]) == 0 && (argci + 1 < argc))
         {
             sscanf(argv[argci + 1], "%u", &PUZZLE_SIZE);
@@ -898,7 +890,6 @@ int main(int argc, char **argv)
     }
 
     printf("SIZE = %u\n", PUZZLE_SIZE);
-    printf("LEVEL = %u\n", LEVEL);
     printf("THREADS = %u\n", nthreads);
     printf("Input puzzle for GOAL:\n");
     if ((r = GetPlate(&goal, stdin)))
