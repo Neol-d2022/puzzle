@@ -30,8 +30,9 @@ In this case is just one(This is default value).
   
 Second, you need a unsolved 8-puzzle.  
 Like this  
-[](demo3by3game.png)  
+![](demo3by3game.png)  
 [Source](http://mypuzzle.org/sliding)  
+  
 The typical goal for this game is  
 ```
 1 2 3
