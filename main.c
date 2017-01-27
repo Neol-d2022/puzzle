@@ -601,7 +601,8 @@ void* doWork(void *arg) {
 
             if(w->debug) {
                 printPlate(d->p, stdout);
-                printf("(%i) Dequeued\n\n", (int)pthread_self());
+                printf("(%i) Dequeued(h=%u l=%u p=%u n=%u).\n\n", (int)pthread_self(), d->h, d->ldis, d->preference, d->nparents);
+                fgets(buf, sizeof(buf), stdin);
             }
 
             if (*(w->min) > d->h)
@@ -727,6 +728,8 @@ void* doWork(void *arg) {
                 {
                     while(pthread_mutex_trylock(w->outputLock));
                     printf("(%i) Accepted (h=%u l=%u p=%u n=%u).\n\n", (int)pthread_self(), next->h, next->ldis, next->preference, next->nparents);
+                    if(w->interact && w->firstThread == self)
+                        fgets(buf, sizeof(buf), stdin);
                     pthread_mutex_unlock(w->outputLock);
                 }
             }
@@ -736,6 +739,8 @@ void* doWork(void *arg) {
                 {
                     while(pthread_mutex_trylock(w->outputLock));
                     printf("(%i) Rejected.\n\n", (int)pthread_self());
+                    if(w->interact && w->firstThread == self)
+                        fgets(buf, sizeof(buf), stdin);
                     pthread_mutex_unlock(w->outputLock);
                 }
             }
@@ -777,6 +782,8 @@ void* doWork(void *arg) {
                 {
                     while(pthread_mutex_trylock(w->outputLock));
                     printf("(%i) Accepted (h=%u l=%u p=%u n=%u).\n\n", (int)pthread_self(), next->h, next->ldis, next->preference, next->nparents);
+                    if(w->interact && w->firstThread == self)
+                        fgets(buf, sizeof(buf), stdin);
                     pthread_mutex_unlock(w->outputLock);
                 }
             }
@@ -786,6 +793,8 @@ void* doWork(void *arg) {
                 {
                     while(pthread_mutex_trylock(w->outputLock));
                     printf("(%i) Rejected.\n\n", (int)pthread_self());
+                    if(w->interact && w->firstThread == self)
+                        fgets(buf, sizeof(buf), stdin);
                     pthread_mutex_unlock(w->outputLock);
                 }
             }
@@ -827,6 +836,8 @@ void* doWork(void *arg) {
                 {
                     while(pthread_mutex_trylock(w->outputLock));
                     printf("(%i) Accepted (h=%u l=%u p=%u n=%u).\n\n", (int)pthread_self(), next->h, next->ldis, next->preference, next->nparents);
+                    if(w->interact && w->firstThread == self)
+                        fgets(buf, sizeof(buf), stdin);
                     pthread_mutex_unlock(w->outputLock);
                 }
             }
@@ -836,6 +847,8 @@ void* doWork(void *arg) {
                 {
                     while(pthread_mutex_trylock(w->outputLock));
                     printf("(%i) Rejected.\n\n", (int)pthread_self());
+                    if(w->interact && w->firstThread == self)
+                        fgets(buf, sizeof(buf), stdin);
                     pthread_mutex_unlock(w->outputLock);
                 }
             }
@@ -877,6 +890,8 @@ void* doWork(void *arg) {
                 {
                     while(pthread_mutex_trylock(w->outputLock));
                     printf("(%i) Accepted (h=%u l=%u p=%u n=%u).\n\n", (int)pthread_self(), next->h, next->ldis, next->preference, next->nparents);
+                    if(w->interact && w->firstThread == self)
+                        fgets(buf, sizeof(buf), stdin);
                     pthread_mutex_unlock(w->outputLock);
                 }
             }
@@ -886,6 +901,8 @@ void* doWork(void *arg) {
                 {
                     while(pthread_mutex_trylock(w->outputLock));
                     printf("(%i) Rejected.\n\n", (int)pthread_self());
+                    if(w->interact && w->firstThread == self)
+                        fgets(buf, sizeof(buf), stdin);
                     pthread_mutex_unlock(w->outputLock);
                 }
             }
