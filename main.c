@@ -494,8 +494,6 @@ typedef struct {
     pthread_rwlock_t *pqLock;
     pthread_rwlock_t *platesLock;
     pthread_rwlock_t *exitLock;
-    pthread_mutex_t *minLock;
-    pthread_mutex_t *maxLock;
     pthread_mutex_t *outputLock;
     int debug;
     int interact;
@@ -844,8 +842,6 @@ int main(int argc, char **argv)
     pthread_rwlock_t pqLock;
     pthread_rwlock_t platesLock;
     pthread_rwlock_t exitLock;
-    pthread_mutex_t minLock;
-    pthread_mutex_t maxLock;
     pthread_mutex_t outputLock;
     PLATE goal;
     PLATE input;
@@ -921,14 +917,10 @@ int main(int argc, char **argv)
     pthread_rwlock_init(&pqLock, 0);
     pthread_rwlock_init(&platesLock, 0);
     pthread_rwlock_init(&exitLock, 0);
-    pthread_mutex_init(&minLock, 0);
-    pthread_mutex_init(&maxLock, 0);
     pthread_mutex_init(&outputLock, 0);
     w.pqLock = &pqLock;
     w.platesLock = &platesLock;
     w.exitLock = &exitLock;
-    w.minLock = &minLock;
-    w.maxLock = &maxLock;
     w.outputLock = &outputLock;
     printf("Lock initialized.\n");
     w.goal = &goal;
@@ -962,8 +954,6 @@ int main(int argc, char **argv)
     pthread_rwlock_destroy(&pqLock);
     pthread_rwlock_destroy(&platesLock);
     pthread_rwlock_destroy(&exitLock);
-    pthread_mutex_destroy(&minLock);
-    pthread_mutex_destroy(&maxLock);
     pthread_mutex_destroy(&outputLock);
 
     if (w.dOutput)
