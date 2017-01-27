@@ -5,7 +5,7 @@ LFLAGS=-s
 
 OBJS=main.o avl.o
 DEPS=avl.h
-LIBS=
+LIBS=-lpthread
 
 BIN=puzzle
 
