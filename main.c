@@ -511,7 +511,7 @@ void* doWork(void *arg) {
     PLATE *findResult;
     size_t s;
     pthread_t self = pthread_self();
-    unsigned int i, rc[2];
+    unsigned int i, rc[2], idle;
     int dequeued, r, exiting;
 
     w = (WORKSPACE*)arg;
@@ -519,6 +519,7 @@ void* doWork(void *arg) {
     pq = w->pq;
     plates = w->plates;
 
+    idle = 0;
     plate = (PLATE*)malloc(sizeof(*plate));
     plate->s = (unsigned char*)malloc(PUZZLE_SIZE * PUZZLE_SIZE);
     while (1)
@@ -539,9 +540,14 @@ void* doWork(void *arg) {
         dequeued = DequeuePQ(pq, &d);
         pthread_rwlock_unlock(w->pqLock);
         if(dequeued) {
-            sleep(1);
-            continue;
+            idle += 1;
+            if(idle >= 3) break;
+            else {
+                sleep(1);
+                continue;
+            }
         }
+        else idle = 0;
         
         if(self == w->firstThread && w->interact) {
             while(pthread_rwlock_tryrdlock(w->platesLock));
@@ -932,6 +938,7 @@ int main(int argc, char **argv)
     w.max = &max;
     w.debug = debug;
     w.interact = interact;
+    w.dOutput = 0;
     printf("Workspace set up.\n");
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
