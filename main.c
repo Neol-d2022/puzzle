@@ -288,15 +288,15 @@ unsigned int CalcLDis(PLATE *current, const PLATE *goal, unsigned int index)
     unsigned int x[2], i, j, minr, minc, k, l, m;
 
     D1ToD2(index, x, x + 1);
-    minr = (x[0] + 1 >= PUZZLE_SIZE) ? PUZZLE_SIZE : x[0] + 1;
-    minc = (x[1] + 1 >= PUZZLE_SIZE) ? PUZZLE_SIZE : x[1] + 1;
+    minr = (x[0] + 1 >= PUZZLE_SIZE) ? (PUZZLE_SIZE - 1) : x[0] + 1;
+    minc = (x[1] + 1 >= PUZZLE_SIZE) ? (PUZZLE_SIZE - 1) : x[1] + 1;
     k = 0;
-    for(i = x[0] - 1; i < minr ; i += 1) {
-        for(j = x[1] - 1; j < minc; j += 1) {
+    for(i = x[0] - 1; i <= minr ; i += 1) {
+        for(j = x[1] - 1; j <= minc; j += 1) {
             if(i == x[0] && j == x[1]) continue;
             l = FindInPlate(current, (goal->s)[i * PUZZLE_SIZE + j]);
             m = D2Diff(i * PUZZLE_SIZE + j, l);
-            k += m * m;
+            k += m;
         }
     }
 
