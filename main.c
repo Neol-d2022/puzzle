@@ -664,8 +664,8 @@ void* doWork(void *arg) {
                 next->h = CalcDis(next->p, w->goal);
                 next->parent = d;
                 next->nparents = d->nparents + 1;
-                if(next->h < d->h) next->preference = d->preference + 1;
-                else if(d->preference) next->preference = d->preference - 1;
+                if(next->h < d->h) next->preference = d->preference + d->h - next->h;
+                else if(d->preference > next->h - d->h) next->preference = d->preference + d->h - next->h;
                 while(pthread_rwlock_trywrlock(w->pqLock));
                 EnqueuePQ(pq, next);
                 pthread_rwlock_unlock(w->pqLock);
@@ -713,8 +713,8 @@ void* doWork(void *arg) {
                 next->h = CalcDis(next->p, w->goal);
                 next->parent = d;
                 next->nparents = d->nparents + 1;
-                if(next->h < d->h) next->preference = d->preference + 1;
-                else if(d->preference) next->preference = d->preference - 1;
+                if(next->h < d->h) next->preference = d->preference + d->h - next->h;
+                else if(d->preference > next->h - d->h) next->preference = d->preference + d->h - next->h;
                 while(pthread_rwlock_trywrlock(w->pqLock));
                 EnqueuePQ(pq, next);
                 pthread_rwlock_unlock(w->pqLock);
@@ -762,8 +762,8 @@ void* doWork(void *arg) {
                 next->h = CalcDis(next->p, w->goal);
                 next->parent = d;
                 next->nparents = d->nparents + 1;
-                if(next->h < d->h) next->preference = d->preference + 1;
-                else if(d->preference) next->preference = d->preference - 1;
+                if(next->h < d->h) next->preference = d->preference + d->h - next->h;
+                else if(d->preference > next->h - d->h) next->preference = d->preference + d->h - next->h;
                 while(pthread_rwlock_trywrlock(w->pqLock));
                 EnqueuePQ(pq, next);
                 pthread_rwlock_unlock(w->pqLock);
@@ -811,8 +811,8 @@ void* doWork(void *arg) {
                 next->h = CalcDis(next->p, w->goal);
                 next->parent = d;
                 next->nparents = d->nparents + 1;
-                if(next->h < d->h) next->preference = d->preference + 1;
-                else if(d->preference) next->preference = d->preference - 1;
+                if(next->h < d->h) next->preference = d->preference + d->h - next->h;
+                else if(d->preference > next->h - d->h) next->preference = d->preference + d->h - next->h;
                 while(pthread_rwlock_trywrlock(w->pqLock));
                 EnqueuePQ(pq, next);
                 pthread_rwlock_unlock(w->pqLock);
