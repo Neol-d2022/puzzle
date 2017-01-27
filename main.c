@@ -68,11 +68,7 @@ int cmpPQ(void *a, void *b)
     c = (DESICISON *)a;
     d = (DESICISON *)b;
 
-    if (c->h + c->nparents - c->preference + c->ldis > d->h + d->nparents - d->preference + d->ldis)
-        return -1;
-    else if (c->h + c->nparents - c->preference + c->ldis < d->h + d->nparents - d->preference + d->ldis)
-        return 1;
-    else if (c->h + c->nparents - c->preference > d->h + d->nparents - d->preference)
+    if (c->h + c->nparents - c->preference > d->h + d->nparents - d->preference)
         return -1;
     else if (c->h + c->nparents - c->preference < d->h + d->nparents - d->preference)
         return 1;
@@ -730,7 +726,7 @@ void* doWork(void *arg) {
                 if (w->debug)
                 {
                     while(pthread_mutex_trylock(w->outputLock));
-                    printf("(%i) Accepted (h = %4u).\n\n", (int)pthread_self(), next->h);
+                    printf("(%i) Accepted (h=%u l=%u p=%u n=%u).\n\n", (int)pthread_self(), next->h, next->ldis, next->preference, next->nparents);
                     pthread_mutex_unlock(w->outputLock);
                 }
             }
@@ -780,7 +776,7 @@ void* doWork(void *arg) {
                 if (w->debug)
                 {
                     while(pthread_mutex_trylock(w->outputLock));
-                    printf("(%i) Accepted (h = %4u).\n\n", (int)pthread_self(), next->h);
+                    printf("(%i) Accepted (h=%u l=%u p=%u n=%u).\n\n", (int)pthread_self(), next->h, next->ldis, next->preference, next->nparents);
                     pthread_mutex_unlock(w->outputLock);
                 }
             }
@@ -830,7 +826,7 @@ void* doWork(void *arg) {
                 if (w->debug)
                 {
                     while(pthread_mutex_trylock(w->outputLock));
-                    printf("(%i) Accepted (h = %4u).\n\n", (int)pthread_self(), next->h);
+                    printf("(%i) Accepted (h=%u l=%u p=%u n=%u).\n\n", (int)pthread_self(), next->h, next->ldis, next->preference, next->nparents);
                     pthread_mutex_unlock(w->outputLock);
                 }
             }
@@ -880,7 +876,7 @@ void* doWork(void *arg) {
                 if (w->debug)
                 {
                     while(pthread_mutex_trylock(w->outputLock));
-                    printf("(%i) Accepted (h = %4u).\n\n", (int)pthread_self(), next->h);
+                    printf("(%i) Accepted (h=%u l=%u p=%u n=%u).\n\n", (int)pthread_self(), next->h, next->ldis, next->preference, next->nparents);
                     pthread_mutex_unlock(w->outputLock);
                 }
             }
