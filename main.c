@@ -261,47 +261,55 @@ unsigned int CalcDisP2P(unsigned int currentIdx, unsigned int goalIdx, unsigned 
         D1ToD2(j, y, y + 1);
         if(x[0] != y[0] && x[1] != y[1]) k -= 2;
         n = (unsigned int)-1;
-        if(x[0] == 0 && y[0] > x[0]) {
-            m = D2Diff(i + PUZZLE_SIZE, l);
-            if(l % 3 == x[1] && D2Diff(l, i) < D2Diff(l, i + PUZZLE_SIZE)) m += 2;
-            if(n > m) n = m;
+        if(x[0] == 0) {
+            if(y[0] > x[0]) {
+                m = D2Diff(i + PUZZLE_SIZE, l);
+                if(l % PUZZLE_SIZE == x[1] && D2Diff(l, i) < D2Diff(l, i + PUZZLE_SIZE)) m += 2;
+                if(n > m) n = m;
+            }
         }
-        else if(x[0] == PUZZLE_SIZE - 1 && y[0] < x[0]) {
-            m = D2Diff(i - PUZZLE_SIZE, l);
-            if(l % 3 == x[1] && D2Diff(l, i) < D2Diff(l, i - PUZZLE_SIZE)) m += 2;
-            if(n > m) n = m;
+        else if(x[0] == PUZZLE_SIZE - 1) {
+            if(y[0] < x[0]) {
+                m = D2Diff(i - PUZZLE_SIZE, l);
+                if(l % PUZZLE_SIZE == x[1] && D2Diff(l, i) < D2Diff(l, i - PUZZLE_SIZE)) m += 2;
+                if(n > m) n = m;
+            }
         }
         else {
             if(y[0] > x[0]) {
                 m = D2Diff(i + PUZZLE_SIZE, l);
-                if(l % 3 == x[1] && D2Diff(l, i) < D2Diff(l, i + PUZZLE_SIZE)) m += 2;
+                if(l % PUZZLE_SIZE == x[1] && D2Diff(l, i) < D2Diff(l, i + PUZZLE_SIZE)) m += 2;
                 if(n > m) n = m;
             }
             if(y[0] < x[0]) {
                 m = D2Diff(i - PUZZLE_SIZE, l);
-                if(l % 3 == x[1] && D2Diff(l, i) < D2Diff(l, i - PUZZLE_SIZE)) m += 2;
+                if(l % PUZZLE_SIZE == x[1] && D2Diff(l, i) < D2Diff(l, i - PUZZLE_SIZE)) m += 2;
                 if(n > m) n = m;
             }
         }
-        if(x[1] == 0 && y[1] > x[1]) {
-            m = D2Diff(i + 1, l);
-            if(l / 3 == x[0] && D2Diff(l, i) < D2Diff(l, i + 1)) m += 2;
-            if(n > m) n = m;
+        if(x[1] == 0) {
+            if(y[1] > x[1]) {
+                m = D2Diff(i + 1, l);
+                if(l / PUZZLE_SIZE == x[0] && D2Diff(l, i) < D2Diff(l, i + 1)) m += 2;
+                if(n > m) n = m;
+            }
         }
-        else if(x[1] == PUZZLE_SIZE - 1 && y[1] < x[1]) {
-            m = D2Diff(i - 1, l);
-            if(l / 3 == x[0] && D2Diff(l, i) < D2Diff(l, i - 1)) m += 2;
-            if(n > m) n = m;
+        else if(x[1] == PUZZLE_SIZE - 1) {
+            if(y[1] < x[1]) {
+                m = D2Diff(i - 1, l);
+                if(l / PUZZLE_SIZE == x[0] && D2Diff(l, i) < D2Diff(l, i - 1)) m += 2;
+                if(n > m) n = m;
+            }
         }
         else {
             if(y[1] > x[1]) {
                 m = D2Diff(i + 1, l);
-                if(l / 3 == x[0] && D2Diff(l, i) < D2Diff(l, i + 1)) m += 2;
+                if(l / PUZZLE_SIZE == x[0] && D2Diff(l, i) < D2Diff(l, i + 1)) m += 2;
                 if(n > m) n = m;
             }
             if(y[1] < x[1]) {
                 m = D2Diff(i - 1, l);
-                if(l / 3 == x[0] && D2Diff(l, i) < D2Diff(l, i - 1)) m += 2;
+                if(l / PUZZLE_SIZE == x[0] && D2Diff(l, i) < D2Diff(l, i - 1)) m += 2;
                 if(n > m) n = m;
             }
         }
