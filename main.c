@@ -7,11 +7,7 @@
 
 #include "avl.h"
 
-//#define PUZZLE_SIZE 4
-//#define DB_MAX (PUZZLE_SIZE * PUZZLE_SIZE * PUZZLE_SIZE)
-//#define DB_DROP_FACTOR 0.9
-
-unsigned int DB;
+unsigned int LEVEL = 0;
 unsigned int PUZZLE_SIZE = 3;
 
 typedef struct
@@ -25,8 +21,6 @@ typedef struct DESICISON_STRUCT
     struct DESICISON_STRUCT *parent;
     unsigned int h; //distance to goal
     unsigned int nparents;
-    unsigned int preference;
-    unsigned int ldis;
 } DESICISON;
 
 typedef struct
@@ -68,13 +62,9 @@ int cmpPQ(void *a, void *b)
     c = (DESICISON *)a;
     d = (DESICISON *)b;
 
-    if (c->h + c->nparents - c->preference > d->h + d->nparents - d->preference)
+    if (c->h + (c->nparents << LEVEL) + (1 << LEVEL) - 1 > d->h + (d->nparents << LEVEL) + (1 << LEVEL) - 1)
         return -1;
-    else if (c->h + c->nparents - c->preference < d->h + d->nparents - d->preference)
-        return 1;
-    else if (c->h + c->nparents > d->h + d->nparents)
-        return -1;
-    else if (c->h + c->nparents < d->h + d->nparents)
+    else if (c->h + (c->nparents << LEVEL) + (1 << LEVEL) - 1 < d->h + (d->nparents << LEVEL)  + (1 << LEVEL) - 1)
         return 1;
     else if (c->h > d->h)
         return -1;
@@ -127,8 +117,6 @@ void InitD(DESICISON *d)
     d->p = p;
     d->parent = 0;
     d->nparents = 0;
-    d->preference = 0;
-    d->ldis = 0;
 }
 
 void DeInitD(DESICISON *d)
@@ -245,30 +233,6 @@ unsigned int D2Diff(unsigned int i, unsigned int j)
     return r;
 }
 
-unsigned int CalcDis(PLATE *current, const PLATE *goal)
-{
-    unsigned int i, j, k;
-
-    k = 0;
-    for (i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; i += 1)
-    {
-        if ((current->s)[i] == 0)
-            continue;
-        for (j = 0; j < PUZZLE_SIZE * PUZZLE_SIZE; j += 1)
-        {
-            if ((current->s)[i] == (goal->s)[j])
-            {
-                k += D2Diff(i, j);
-                break;
-            }
-        }
-        if (j >= PUZZLE_SIZE * PUZZLE_SIZE)
-            return -1;
-    }
-
-    return k;
-}
-
 unsigned int FindInPlate(const PLATE *p, unsigned int chr)
 {
     unsigned int i;
@@ -279,47 +243,91 @@ unsigned int FindInPlate(const PLATE *p, unsigned int chr)
     return i;
 }
 
-unsigned int CalcLDis(PLATE *current, const PLATE *goal, unsigned int index)
-{
-    unsigned int x[2], k, l, m;
+unsigned int CalcDisP2P(unsigned int currentIdx, unsigned int goalIdx, unsigned int selfIdx) {
+    unsigned int i, j, k, l, m, n, x[2], y[2];
 
-    D1ToD2(index, x, x + 1);
+    i = currentIdx;
+    j = goalIdx;
     k = 0;
-    if(x[0] == 0) {
-        l = FindInPlate(current, (goal->s)[index + PUZZLE_SIZE]);
-        m = D2Diff(index + PUZZLE_SIZE, l);
-        k += m;
+    l = selfIdx;
+
+    m = D2Diff(i, j);
+    if(m) {
+        k += m + (m - 1) * 4;
+        D1ToD2(i, x, x + 1);
+        D1ToD2(j, y, y + 1);
+        if(x[0] != y[0] && x[1] != y[1]) k -= 2;
+        n = (unsigned int)-1;
+        if(x[0] == 0 && y[0] > x[0]) {
+            m = D2Diff(i + PUZZLE_SIZE, l);
+            if(l % 3 == x[1] && D2Diff(l, i) < D2Diff(l, i + PUZZLE_SIZE)) m += 2;
+            if(n > m) n = m;
+        }
+        else if(x[0] == PUZZLE_SIZE - 1 && y[0] < x[0]) {
+            m = D2Diff(i - PUZZLE_SIZE, l);
+            if(l % 3 == x[1] && D2Diff(l, i) < D2Diff(l, i - PUZZLE_SIZE)) m += 2;
+            if(n > m) n = m;
+        }
+        else {
+            if(y[0] > x[0]) {
+                m = D2Diff(i + PUZZLE_SIZE, l);
+                if(l % 3 == x[1] && D2Diff(l, i) < D2Diff(l, i + PUZZLE_SIZE)) m += 2;
+                if(n > m) n = m;
+            }
+            if(y[0] < x[0]) {
+                m = D2Diff(i - PUZZLE_SIZE, l);
+                if(l % 3 == x[1] && D2Diff(l, i) < D2Diff(l, i - PUZZLE_SIZE)) m += 2;
+                if(n > m) n = m;
+            }
+        }
+        if(x[1] == 0 && y[1] > x[1]) {
+            m = D2Diff(i + 1, l);
+            if(l / 3 == x[0] && D2Diff(l, i) < D2Diff(l, i + 1)) m += 2;
+            if(n > m) n = m;
+        }
+        else if(x[1] == PUZZLE_SIZE - 1 && y[1] < x[1]) {
+            m = D2Diff(i - 1, l);
+            if(l / 3 == x[0] && D2Diff(l, i) < D2Diff(l, i - 1)) m += 2;
+            if(n > m) n = m;
+        }
+        else {
+            if(y[1] > x[1]) {
+                m = D2Diff(i + 1, l);
+                if(l / 3 == x[0] && D2Diff(l, i) < D2Diff(l, i + 1)) m += 2;
+                if(n > m) n = m;
+            }
+            if(y[1] < x[1]) {
+                m = D2Diff(i - 1, l);
+                if(l / 3 == x[0] && D2Diff(l, i) < D2Diff(l, i - 1)) m += 2;
+                if(n > m) n = m;
+            }
+        }
+        k += n;
     }
-    else if(x[0] == PUZZLE_SIZE - 1) {
-        l = FindInPlate(current, (goal->s)[index - PUZZLE_SIZE]);
-        m = D2Diff(index - PUZZLE_SIZE, l);
-        k += m;
-    }
-    else {
-        l = FindInPlate(current, (goal->s)[index + PUZZLE_SIZE]);
-        m = D2Diff(index + PUZZLE_SIZE, l);
-        k += m;
-        l = FindInPlate(current, (goal->s)[index - PUZZLE_SIZE]);
-        m = D2Diff(index - PUZZLE_SIZE, l);
-        k += m;
-    }
-    if(x[1] == 0) {
-        l = FindInPlate(current, (goal->s)[index + 1]);
-        m = D2Diff(index + 1, l);
-        k += m;
-    }
-    else if(x[1] == PUZZLE_SIZE - 1) {
-        l = FindInPlate(current, (goal->s)[index - 1]);
-        m = D2Diff(index - 1, l);
-        k += m;
-    }
-    else {
-        l = FindInPlate(current, (goal->s)[index + 1]);
-        m = D2Diff(index + 1, l);
-        k += m;
-        l = FindInPlate(current, (goal->s)[index - 1]);
-        m = D2Diff(index - 1, l);
-        k += m;
+
+    return k;
+}
+
+unsigned int CalcDis(PLATE *current, const PLATE *goal)
+{
+    unsigned int i, j, k, l;
+
+    l = FindInPlate(current, 0);
+    k = 0;
+    for (i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; i += 1)
+    {
+        if ((current->s)[i] == 0)
+            continue;
+        for (j = 0; j < PUZZLE_SIZE * PUZZLE_SIZE; j += 1)
+        {
+            if ((current->s)[i] == (goal->s)[j])
+            {
+                k += CalcDisP2P(i, j, l);
+                break;
+            }
+        }
+        if (j >= PUZZLE_SIZE * PUZZLE_SIZE)
+            return -1;
     }
 
     return k;
@@ -601,7 +609,7 @@ void* doWork(void *arg) {
 
             if(w->debug) {
                 printPlate(d->p, stdout);
-                printf("(%i) Dequeued(h=%u l=%u p=%u n=%u).\n\n", (int)pthread_self(), d->h, d->ldis, d->preference, d->nparents);
+                printf("(%i) Dequeued(h=%u n=%u).\n\n", (int)pthread_self(), d->h, d->nparents);
                 fgets(buf, sizeof(buf), stdin);
             }
 
@@ -611,10 +619,10 @@ void* doWork(void *arg) {
                 *(w->max) = d->h;
 
             if(w->debug) {
-                s = printf("minD=%u maxD=%u Qsize=%u Psize=%u dis=%u ldis=%u pref=%u steps=%u\n", *(w->min), *(w->max), pq->count, plates->count, d->h, d->ldis, d->preference, d->nparents);
+                s = printf("minD=%u maxD=%u Qsize=%u Psize=%u dis=%u steps=%u\n", *(w->min), *(w->max), pq->count, plates->count, d->h, d->nparents);
             }
             else {
-                s = printf("minD=%u maxD=%u Qsize=%u Psize=%u dis=%u ldis=%u pref=%u steps=%u ", *(w->min), *(w->max), pq->count, plates->count, d->h, d->ldis, d->preference, d->nparents);
+                s = printf("minD=%u maxD=%u Qsize=%u Psize=%u dis=%u steps=%u ", *(w->min), *(w->max), pq->count, plates->count, d->h, d->nparents);
                 memset(buf, '\b', s);
                 buf[s] = '\0';
                 printf("%s", buf);
@@ -672,7 +680,7 @@ void* doWork(void *arg) {
         if (w->debug)
         {
             while(pthread_mutex_trylock(w->outputLock));
-            printf("(%i) i=%u r=%u c=%u f=%u\n", (int)pthread_self(), i, rc[0], rc[1], r);
+            printf("(%i) i=%u x=[%u,%u] f=%u\n", (int)pthread_self(), i, rc[0], rc[1], r);
             pthread_mutex_unlock(w->outputLock);
         }
 
@@ -716,18 +724,15 @@ void* doWork(void *arg) {
                 pthread_rwlock_unlock(w->platesLock);
                 findResult = plate; plate = next->p; next->p = findResult;
                 next->h = CalcDis(next->p, w->goal);
-                next->ldis = CalcLDis(next->p, w->goal, i - PUZZLE_SIZE);
                 next->parent = d;
                 next->nparents = d->nparents + 1;
-                if(next->h + next->ldis < d->h + d->ldis) next->preference = d->preference + d->h + d->ldis - next->h - next->ldis;
-                else if(d->preference > next->h + next->ldis - d->h - d->ldis + 1) next->preference = d->preference + d->h + d->ldis - next->h - next->ldis - 1;
                 while(pthread_rwlock_trywrlock(w->pqLock));
                 EnqueuePQ(pq, next);
                 pthread_rwlock_unlock(w->pqLock);
                 if (w->debug)
                 {
                     while(pthread_mutex_trylock(w->outputLock));
-                    printf("(%i) Accepted (h=%u l=%u p=%u n=%u).\n\n", (int)pthread_self(), next->h, next->ldis, next->preference, next->nparents);
+                    printf("(%i) Accepted (h=%u n=%u).\n\n", (int)pthread_self(), next->h, next->nparents);
                     if(w->interact && w->firstThread == self)
                         fgets(buf, sizeof(buf), stdin);
                     pthread_mutex_unlock(w->outputLock);
@@ -770,18 +775,15 @@ void* doWork(void *arg) {
                 pthread_rwlock_unlock(w->platesLock);
                 findResult = plate; plate = next->p; next->p = findResult;
                 next->h = CalcDis(next->p, w->goal);
-                next->ldis = CalcLDis(next->p, w->goal, i + PUZZLE_SIZE);
                 next->parent = d;
                 next->nparents = d->nparents + 1;
-                if(next->h + next->ldis < d->h + d->ldis) next->preference = d->preference + d->h + d->ldis - next->h - next->ldis;
-                else if(d->preference > next->h + next->ldis - d->h - d->ldis + 1) next->preference = d->preference + d->h + d->ldis - next->h - next->ldis - 1;
                 while(pthread_rwlock_trywrlock(w->pqLock));
                 EnqueuePQ(pq, next);
                 pthread_rwlock_unlock(w->pqLock);
                 if (w->debug)
                 {
                     while(pthread_mutex_trylock(w->outputLock));
-                    printf("(%i) Accepted (h=%u l=%u p=%u n=%u).\n\n", (int)pthread_self(), next->h, next->ldis, next->preference, next->nparents);
+                    printf("(%i) Accepted (h=%u n=%u).\n\n", (int)pthread_self(), next->h, next->nparents);
                     if(w->interact && w->firstThread == self)
                         fgets(buf, sizeof(buf), stdin);
                     pthread_mutex_unlock(w->outputLock);
@@ -824,18 +826,15 @@ void* doWork(void *arg) {
                 pthread_rwlock_unlock(w->platesLock);
                 findResult = plate; plate = next->p; next->p = findResult;
                 next->h = CalcDis(next->p, w->goal);
-                next->ldis = CalcLDis(next->p, w->goal, i - 1);
                 next->parent = d;
                 next->nparents = d->nparents + 1;
-                if(next->h + next->ldis < d->h + d->ldis) next->preference = d->preference + d->h + d->ldis - next->h - next->ldis;
-                else if(d->preference > next->h + next->ldis - d->h - d->ldis + 1) next->preference = d->preference + d->h + d->ldis - next->h - next->ldis - 1;
                 while(pthread_rwlock_trywrlock(w->pqLock));
                 EnqueuePQ(pq, next);
                 pthread_rwlock_unlock(w->pqLock);
                 if (w->debug)
                 {
                     while(pthread_mutex_trylock(w->outputLock));
-                    printf("(%i) Accepted (h=%u l=%u p=%u n=%u).\n\n", (int)pthread_self(), next->h, next->ldis, next->preference, next->nparents);
+                    printf("(%i) Accepted (h=%u n=%u).\n\n", (int)pthread_self(), next->h, next->nparents);
                     if(w->interact && w->firstThread == self)
                         fgets(buf, sizeof(buf), stdin);
                     pthread_mutex_unlock(w->outputLock);
@@ -878,18 +877,15 @@ void* doWork(void *arg) {
                 pthread_rwlock_unlock(w->platesLock);
                 findResult = plate; plate = next->p; next->p = findResult;
                 next->h = CalcDis(next->p, w->goal);
-                next->ldis = CalcLDis(next->p, w->goal, i + 1);
                 next->parent = d;
                 next->nparents = d->nparents + 1;
-                if(next->h + next->ldis < d->h + d->ldis) next->preference = d->preference + d->h + d->ldis - next->h - next->ldis;
-                else if(d->preference > next->h + next->ldis - d->h - d->ldis + 1) next->preference = d->preference + d->h + d->ldis - next->h - next->ldis - 1;
                 while(pthread_rwlock_trywrlock(w->pqLock));
                 EnqueuePQ(pq, next);
                 pthread_rwlock_unlock(w->pqLock);
                 if (w->debug)
                 {
                     while(pthread_mutex_trylock(w->outputLock));
-                    printf("(%i) Accepted (h=%u l=%u p=%u n=%u).\n\n", (int)pthread_self(), next->h, next->ldis, next->preference, next->nparents);
+                    printf("(%i) Accepted (h=%u n=%u).\n\n", (int)pthread_self(), next->h, next->nparents);
                     if(w->interact && w->firstThread == self)
                         fgets(buf, sizeof(buf), stdin);
                     pthread_mutex_unlock(w->outputLock);
@@ -958,6 +954,12 @@ int main(int argc, char **argv)
             argci += 1;
         }
 
+        if (strcmp("level", argv[argci]) == 0 && (argci + 1 < argc))
+        {
+            sscanf(argv[argci + 1], "%u", &LEVEL);
+            argci += 1;
+        }
+
         if (strcmp("noninteract", argv[argci]) == 0)
         {
             interact = 0;
@@ -966,6 +968,7 @@ int main(int argc, char **argv)
 
     printf("SIZE = %u\n", PUZZLE_SIZE);
     printf("THREADS = %u\n", nthreads);
+    printf("LEVEL = %u\n", LEVEL);
     printf("Input puzzle for GOAL:\n");
     if ((r = GetPlate(&goal, stdin)))
         return r;
@@ -980,7 +983,6 @@ int main(int argc, char **argv)
     d = DecisionBankAdd(dbank);
     memcpy(d->p->s, input.s, PUZZLE_SIZE * PUZZLE_SIZE);
     d->h = CalcDis(d->p, &goal);
-    d->ldis = CalcLDis(d->p, &goal, FindInPlate(d->p, 0));
     AddPlate(plates, d->p);
     EnqueuePQ(pq, d);
 
