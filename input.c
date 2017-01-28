@@ -76,31 +76,61 @@ void freeToks(char **toks, size_t n)
 int GetPlate(PLATE *p, FILE *input)
 {
     char buf[256], **toks;
+    unsigned char *v;
     size_t ntoks;
     unsigned int i, j, in;
     p->s = (unsigned char *)malloc(PUZZLE_SIZE * PUZZLE_SIZE);
+    v = (unsigned char *)malloc(PUZZLE_SIZE * PUZZLE_SIZE);
+    memset(v, PUZZLE_SIZE * PUZZLE_SIZE, PUZZLE_SIZE * PUZZLE_SIZE);
     for (i = 0; i < PUZZLE_SIZE; i += 1)
     {
         if (!fgets(buf, sizeof(buf), input))
+        {
+            free(p->s);
+            free(v);
             return 1;
+        }
+
         TrimNewline(buf);
 
         tokenize(buf, ' ', &toks, &ntoks, 1);
         if (ntoks != PUZZLE_SIZE)
+        {
+            freeToks(toks, ntoks);
+            free(p->s);
+            free(v);
             return 2;
+        }
 
         for (j = 0; j < PUZZLE_SIZE; j += 1)
         {
-            sscanf(toks[j], "%u", &in);
-            if (in > 0xFF)
+            if (sscanf(toks[j], "%u", &in) != 1)
             {
                 freeToks(toks, ntoks);
+                free(p->s);
+                free(v);
                 return 3;
             }
+            if (in >= PUZZLE_SIZE * PUZZLE_SIZE)
+            {
+                freeToks(toks, ntoks);
+                free(p->s);
+                free(v);
+                return 3;
+            }
+            if (v[in] != PUZZLE_SIZE * PUZZLE_SIZE)
+            {
+                freeToks(toks, ntoks);
+                free(p->s);
+                free(v);
+                return 3;
+            }
+            v[in] = i * PUZZLE_SIZE + j;
             (p->s)[i * PUZZLE_SIZE + j] = (unsigned char)in;
         }
 
         freeToks(toks, ntoks);
     }
+    free(v);
     return 0;
 }
