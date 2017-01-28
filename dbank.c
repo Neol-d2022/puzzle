@@ -36,7 +36,10 @@ DESICISON *DecisionBankAdd(DBank *dbank)
     return ret;
 }
 
-static void _traverseF(void *dataPtr, void *n) {
+static void _traverseF(void *dataPtr, void *n)
+{
+    if (n)
+        *(int *)n = 0;
     DeInitD(dataPtr);
     free(dataPtr);
 }
