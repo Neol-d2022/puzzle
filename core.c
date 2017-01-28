@@ -36,6 +36,8 @@ unsigned int CalcDis(PLATE *current, const PLATE *goal, unsigned int **buffers)
                 continue;
             for (k = 0; k < 3; k += 1)
             {
+                if (j != 1 && k != 1)
+                    continue;
                 if (x[1] - 1 + k >= PUZZLE_SIZE)
                     continue;
                 m = p[(x[0] - 1 + j) * PUZZLE_SIZE + (x[1] - 1 + k)];
