@@ -95,11 +95,11 @@ void *doWork(void *arg)
 
                 if (w->debug)
                 {
-                    s = printf("minD=%u maxD=%u Qsize=%u Psize=%u dis=%u steps=%u\n", *(w->min), *(w->max), pq->count, plates->count, d->h, d->nparents);
+                    s = printf("minD=%u maxD=%u err=%u Qsize=%u Psize=%u dis=%u steps=%u\n", *(w->min), *(w->max), d->h + d->nparents, pq->count, plates->count, d->h, d->nparents);
                 }
                 else
                 {
-                    s = printf("minD=%u maxD=%u Qsize=%u Psize=%u dis=%u steps=%u ", *(w->min), *(w->max), pq->count, plates->count, d->h, d->nparents);
+                    s = printf("minD=%u maxD=%u err=%u Qsize=%u Psize=%u dis=%u steps=%u ", *(w->min), *(w->max), d->h + d->nparents, pq->count, plates->count, d->h, d->nparents);
                     memset(buf, '\b', s);
                     buf[s] = '\0';
                     printf("%s", buf);
@@ -189,7 +189,7 @@ void *doWork(void *arg)
                 ;
             findResult = FindPlate(plates, plate);
             if (findResult)
-                if (nparents < d->nparents)
+                if (nparents + h < findResult->parent->nparents + findResult->parent->h)
                     plateBetter = 1;
             pthread_rwlock_unlock(w->platesLock);
 
@@ -260,7 +260,7 @@ void *doWork(void *arg)
                 ;
             findResult = FindPlate(plates, plate);
             if (findResult)
-                if (nparents < d->nparents)
+                if (nparents + h < findResult->parent->nparents + findResult->parent->h)
                     plateBetter = 1;
             pthread_rwlock_unlock(w->platesLock);
 
@@ -331,7 +331,7 @@ void *doWork(void *arg)
                 ;
             findResult = FindPlate(plates, plate);
             if (findResult)
-                if (nparents < d->nparents)
+                if (nparents + h < findResult->parent->nparents + findResult->parent->h)
                     plateBetter = 1;
             pthread_rwlock_unlock(w->platesLock);
 
@@ -402,7 +402,7 @@ void *doWork(void *arg)
                 ;
             findResult = FindPlate(plates, plate);
             if (findResult)
-                if (nparents < d->nparents)
+                if (nparents + h < findResult->parent->nparents + findResult->parent->h)
                     plateBetter = 1;
             pthread_rwlock_unlock(w->platesLock);
 

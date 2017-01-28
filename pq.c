@@ -14,13 +14,13 @@ static int cmpPQ(void *a, void *b)
         return -1;
     else if (c->h + (c->nparents << LEVEL) + (1 << LEVEL) - 1 < d->h + (d->nparents << LEVEL) + (1 << LEVEL) - 1)
         return 1;
-    else if (c->h > d->h)
-        return -1;
-    else if (c->h < d->h)
-        return 1;
     else if (c->nparents > d->nparents)
         return -1;
     else if (c->nparents < d->nparents)
+        return 1;
+    else if (c->h > d->h)
+        return -1;
+    else if (c->h < d->h)
         return 1;
     else
         return cmpPlate(c->p, d->p);
