@@ -154,7 +154,7 @@ int main(int argc, char **argv)
         }
         if (interact == 0)
         {
-            printf("%u steps\n\n", stack->n);
+            printf("%u steps\n\n", stack->n - 1);
             for (i = stack->n - 1; i < stack->n; i -= 1)
             {
                 printPlate((*((stack->base) + i))->p, stdout);
@@ -163,7 +163,7 @@ int main(int argc, char **argv)
         }
         else
         {
-            printf("%u steps\n\n", stack->n);
+            printf("%u steps\n\n", stack->n - 1);
             for (i = stack->n - 1; i < stack->n; i -= 1)
             {
                 printPlate((*((stack->base) + i))->p, stdout);
