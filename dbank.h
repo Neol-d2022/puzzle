@@ -2,13 +2,9 @@
 #define DBANK_H
 
 #include "desicion.h"
+#include "avl.h"
 
-typedef struct
-{
-    DESICISON **base;
-    unsigned int n;
-    unsigned int max;
-} DBank;
+typedef AVL_TREE DBank;
 
 DBank *CreateDecisionBank(void);
 DESICISON *DecisionBankAdd(DBank *dbank);

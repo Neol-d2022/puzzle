@@ -3,7 +3,7 @@
 #include "plates.h"
 
 // Notice: REVERSED!!
-int cmpPQ(void *a, void *b)
+static int cmpPQ(void *a, void *b)
 {
     DESICISON *c, *d;
 
