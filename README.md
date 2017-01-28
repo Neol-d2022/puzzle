@@ -29,18 +29,6 @@ In this case is 3x3 (This is default value)  .
 `THREADS` indicates how many threads will be participating in finding an answer  
 In this case is just one(This is default value).
   
-`LEVEL` shows how will the program find an answer.  
-To find the one fast, or the one better(less steps)  
-In this case is `0`(This is default value).  
-  
-**WARNING:**  
-**A misconfigured value may cause your computer running out of memory**.  
-level 0 should be fast(and safe).  
-Level 1 will cost much more time than level 0, but the answer is usually better.  
-Level 2 is **NOT** recommended, since it often leads to crashes in solving 5x5 puzzles.  
-*Don't go higher if you don't have a fast computer*  
-*If you are confused*, **use the default value**.  
-  
 --------
   
 Second, you need a unsolved 8-puzzle.  
@@ -88,15 +76,6 @@ You may not want to hit `Enter` multiple times in order to see all detailed step
 if this argument is set, then the program will not wait before printing solution steps.  
 ```
 $ ./puzzle noninteract
-```
-  
---------
-  
-### ``LEVEL``
-You may want to specify level(see above)
-For example, this will find an answer slower, but usually finds a better one.
-```
-$ ./puzzle level 1
 ```
   
 --------
