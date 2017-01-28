@@ -3,8 +3,8 @@ CC=gcc
 CFLAGS=-Wall -Wextra -Ofast
 LFLAGS=-s
 
-OBJS=main.o avl.o
-DEPS=avl.h
+OBJS=avl.o dbank.o input.o plates.o stack.o worker.o core.o desicion.o main.o pq.o util.o
+DEPS=avl.h dbank.h input.h plates.h stack.h worker.h core.h desicion.h main.h plate.h pq.h util.h
 LIBS=-lpthread
 
 BIN=puzzle

@@ -19,19 +19,19 @@ typedef void *(*_treeDataDupFunc)(void *dataPtr);
 //Tree node
 typedef struct node
 {
-    void *dataPtr;      // Data pointer
-    struct node *left;  // Left tree pointer
-    struct node *right; // Right tree pointer
-    int bal;		// Balance number, height of left tree - height of right tree
+  void *dataPtr;      // Data pointer
+  struct node *left;  // Left tree pointer
+  struct node *right; // Right tree pointer
+  int bal;            // Balance number, height of left tree - height of right tree
 } NODE;
 
 //Tree head
 typedef struct
 {
-    _treeCmpFuncT compare;		  //Data comparison function
-    _treeDataFreeMemFunc dataFreeMemFunc; //Data memory release function
-    NODE *root;				  //Tree root node pointer
-    unsigned int count;			  //Number of nodes
+  _treeCmpFuncT compare;                //Data comparison function
+  _treeDataFreeMemFunc dataFreeMemFunc; //Data memory release function
+  NODE *root;                           //Tree root node pointer
+  unsigned int count;                   //Number of nodes
 } AVL_TREE;
 
 //Prototype Declarations
