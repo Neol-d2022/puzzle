@@ -3,14 +3,13 @@
 
 struct DESICISON_STRUCT;
 
-#include "plate.h"
-
 typedef struct DESICISON_STRUCT
 {
-    PLATE *p;
+    unsigned char *p;
     struct DESICISON_STRUCT *parent;
     unsigned int h; //distance to goal
     unsigned int nparents;
+    unsigned int ref;
 } DESICISON;
 
 void InitD(DESICISON *d);

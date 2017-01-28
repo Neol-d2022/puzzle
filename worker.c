@@ -12,26 +12,27 @@ void *doWork(void *arg)
 {
     char buf[256];
     unsigned int *buffers[2];
-    PLATE *plate;
-    DESICISON *d, *next;
+    unsigned char *plate;
+    DESICISON *d, *next, *children[4];
     DBank *dbank;
-    AVL_TREE *pq;
+    AVL_TREE *pq, *pq2, *pq3;
     AVL_TREE *plates;
     WORKSPACE *w;
-    PLATE *findResult;
+    unsigned char *findResult;
     size_t s;
     pthread_t self = pthread_self();
-    unsigned int i, rc[2], idle, h, nparents, updater;
-    int dequeued, r, exiting, plateBetter;
+    unsigned int i, rc[2], idle, h, nparents, updater, total, bad, chId;
+    int dequeued, r, exiting;
 
     w = (WORKSPACE *)arg;
     dbank = w->dbank;
     pq = w->pq;
+    pq2 = w->pq2;
+    pq3 = w->pq3;
     plates = w->plates;
 
     updater = idle = 0;
-    plate = (PLATE *)malloc(sizeof(*plate));
-    plate->s = (unsigned char *)malloc(PUZZLE_SIZE * PUZZLE_SIZE);
+    plate = (unsigned char *)malloc(PUZZLE_SIZE * PUZZLE_SIZE);
     buffers[0] = (unsigned int *)malloc(sizeof(**buffers) * PUZZLE_SIZE * PUZZLE_SIZE);
     buffers[1] = (unsigned int *)malloc(sizeof(**buffers) * PUZZLE_SIZE * PUZZLE_SIZE);
     while (1)
@@ -59,7 +60,7 @@ void *doWork(void *arg)
         if (dequeued)
         {
             idle += 1;
-            if (idle >= 3)
+            if (idle >= 2)
                 break;
             else
             {
@@ -86,7 +87,6 @@ void *doWork(void *arg)
 
             while (pthread_rwlock_tryrdlock(w->platesLock))
                 ;
-            if ((updater & 0x3FFF) == 0x3FFF)
             {
                 while (pthread_rwlock_tryrdlock(w->pqLock))
                     ;
@@ -134,30 +134,37 @@ void *doWork(void *arg)
         i = FindInPlate(d->p, 0);
         D1ToD2(i, rc, rc + 1);
         r = 0;
+        bad = total = 0;
         if (rc[0] == 0)
         {
             r |= 0x4; //Down
+            total += 1;
         }
         else if (rc[0] == PUZZLE_SIZE - 1)
         {
             r |= 0x8; //Up
+            total += 1;
         }
         else
         {
             r |= 0xC; //Up & Down
+            total += 2;
         }
 
         if (rc[1] == 0)
         {
             r |= 0x1; //Right
+            total += 1;
         }
         else if (rc[1] == PUZZLE_SIZE - 1)
         {
             r |= 0x2; //Left
+            total += 1;
         }
         else
         {
             r |= 0x3; //Right & Left
+            total += 2;
         }
         if (w->debug)
         {
@@ -166,12 +173,13 @@ void *doWork(void *arg)
             printf("(%i) i=%u x=[%u,%u] f=%u\n", (int)pthread_self(), i, rc[0], rc[1], r);
             pthread_mutex_unlock(w->outputLock);
         }
+        chId = 0;
 
         // Up
         if (r & 0x8)
         {
-            memcpy(plate->s, d->p->s, PUZZLE_SIZE * PUZZLE_SIZE);
-            swap(plate->s + rc[0] * PUZZLE_SIZE + rc[1], plate->s + (rc[0] - 1) * PUZZLE_SIZE + rc[1]);
+            memcpy(plate, d->p, PUZZLE_SIZE * PUZZLE_SIZE);
+            swap(plate + rc[0] * PUZZLE_SIZE + rc[1], plate + (rc[0] - 1) * PUZZLE_SIZE + rc[1]);
             if (w->debug)
             {
                 while (pthread_mutex_trylock(w->outputLock))
@@ -183,37 +191,30 @@ void *doWork(void *arg)
 
             h = CalcDis(plate, w->goal, buffers);
             nparents = d->nparents + 1;
+            if (h + nparents > d->h + d->nparents)
+                bad += 1;
 
-            plateBetter = 0;
             while (pthread_rwlock_tryrdlock(w->platesLock))
                 ;
             findResult = FindPlate(plates, plate);
-            if (findResult)
-                if (nparents + h < findResult->parent->nparents + findResult->parent->h)
-                    plateBetter = 1;
             pthread_rwlock_unlock(w->platesLock);
 
-            if (!findResult || plateBetter)
+            if (!findResult)
             {
                 while (pthread_rwlock_trywrlock(w->platesLock))
                     ;
                 next = DecisionBankAdd(dbank);
-                if (plateBetter)
-                    findResult->parent = next;
-                else
-                    AddPlate(plates, plate);
+                AddPlate(plates, plate);
                 pthread_rwlock_unlock(w->platesLock);
                 findResult = plate;
                 plate = next->p;
                 next->p = findResult;
-                next->p->parent = next;
                 next->h = h;
                 next->parent = d;
                 next->nparents = nparents;
-                while (pthread_rwlock_trywrlock(w->pqLock))
-                    ;
-                EnqueuePQ(pq, next);
-                pthread_rwlock_unlock(w->pqLock);
+                d->ref += 1;
+                children[chId] = next;
+                chId += 1;
                 if (w->debug)
                 {
                     while (pthread_mutex_trylock(w->outputLock))
@@ -230,7 +231,7 @@ void *doWork(void *arg)
                 {
                     while (pthread_mutex_trylock(w->outputLock))
                         ;
-                    printf("(%i) Rejected.\n\n", (int)pthread_self());
+                    printf("(%i) Rejected (h=%u n=%u).\n\n", (int)pthread_self(), h, nparents);
                     if (w->interact && w->firstThread == self)
                         fgets(buf, sizeof(buf), stdin);
                     pthread_mutex_unlock(w->outputLock);
@@ -241,8 +242,8 @@ void *doWork(void *arg)
         // Down
         if (r & 0x4)
         {
-            memcpy(plate->s, d->p->s, PUZZLE_SIZE * PUZZLE_SIZE);
-            swap(plate->s + rc[0] * PUZZLE_SIZE + rc[1], plate->s + (rc[0] + 1) * PUZZLE_SIZE + rc[1]);
+            memcpy(plate, d->p, PUZZLE_SIZE * PUZZLE_SIZE);
+            swap(plate + rc[0] * PUZZLE_SIZE + rc[1], plate + (rc[0] + 1) * PUZZLE_SIZE + rc[1]);
             if (w->debug)
             {
                 while (pthread_mutex_trylock(w->outputLock))
@@ -254,37 +255,30 @@ void *doWork(void *arg)
 
             h = CalcDis(plate, w->goal, buffers);
             nparents = d->nparents + 1;
+            if (h + nparents > d->h + d->nparents)
+                bad += 1;
 
-            plateBetter = 0;
             while (pthread_rwlock_tryrdlock(w->platesLock))
                 ;
             findResult = FindPlate(plates, plate);
-            if (findResult)
-                if (nparents + h < findResult->parent->nparents + findResult->parent->h)
-                    plateBetter = 1;
             pthread_rwlock_unlock(w->platesLock);
 
-            if (!findResult || plateBetter)
+            if (!findResult)
             {
                 while (pthread_rwlock_trywrlock(w->platesLock))
                     ;
                 next = DecisionBankAdd(dbank);
-                if (plateBetter)
-                    findResult->parent = next;
-                else
-                    AddPlate(plates, plate);
+                AddPlate(plates, plate);
                 pthread_rwlock_unlock(w->platesLock);
                 findResult = plate;
                 plate = next->p;
                 next->p = findResult;
-                next->p->parent = next;
                 next->h = h;
                 next->parent = d;
                 next->nparents = nparents;
-                while (pthread_rwlock_trywrlock(w->pqLock))
-                    ;
-                EnqueuePQ(pq, next);
-                pthread_rwlock_unlock(w->pqLock);
+                d->ref += 1;
+                children[chId] = next;
+                chId += 1;
                 if (w->debug)
                 {
                     while (pthread_mutex_trylock(w->outputLock))
@@ -301,7 +295,7 @@ void *doWork(void *arg)
                 {
                     while (pthread_mutex_trylock(w->outputLock))
                         ;
-                    printf("(%i) Rejected.\n\n", (int)pthread_self());
+                    printf("(%i) Rejected (h=%u n=%u).\n\n", (int)pthread_self(), h, nparents);
                     if (w->interact && w->firstThread == self)
                         fgets(buf, sizeof(buf), stdin);
                     pthread_mutex_unlock(w->outputLock);
@@ -312,8 +306,8 @@ void *doWork(void *arg)
         // Left
         if (r & 0x2)
         {
-            memcpy(plate->s, d->p->s, PUZZLE_SIZE * PUZZLE_SIZE);
-            swap(plate->s + rc[0] * PUZZLE_SIZE + rc[1], plate->s + rc[0] * PUZZLE_SIZE + (rc[1] - 1));
+            memcpy(plate, d->p, PUZZLE_SIZE * PUZZLE_SIZE);
+            swap(plate + rc[0] * PUZZLE_SIZE + rc[1], plate + rc[0] * PUZZLE_SIZE + (rc[1] - 1));
             if (w->debug)
             {
                 while (pthread_mutex_trylock(w->outputLock))
@@ -325,37 +319,30 @@ void *doWork(void *arg)
 
             h = CalcDis(plate, w->goal, buffers);
             nparents = d->nparents + 1;
+            if (h + nparents > d->h + d->nparents)
+                bad += 1;
 
-            plateBetter = 0;
             while (pthread_rwlock_tryrdlock(w->platesLock))
                 ;
             findResult = FindPlate(plates, plate);
-            if (findResult)
-                if (nparents + h < findResult->parent->nparents + findResult->parent->h)
-                    plateBetter = 1;
             pthread_rwlock_unlock(w->platesLock);
 
-            if (!findResult || plateBetter)
+            if (!findResult)
             {
                 while (pthread_rwlock_trywrlock(w->platesLock))
                     ;
                 next = DecisionBankAdd(dbank);
-                if (plateBetter)
-                    findResult->parent = next;
-                else
-                    AddPlate(plates, plate);
+                AddPlate(plates, plate);
                 pthread_rwlock_unlock(w->platesLock);
                 findResult = plate;
                 plate = next->p;
                 next->p = findResult;
-                next->p->parent = next;
                 next->h = h;
                 next->parent = d;
                 next->nparents = nparents;
-                while (pthread_rwlock_trywrlock(w->pqLock))
-                    ;
-                EnqueuePQ(pq, next);
-                pthread_rwlock_unlock(w->pqLock);
+                d->ref += 1;
+                children[chId] = next;
+                chId += 1;
                 if (w->debug)
                 {
                     while (pthread_mutex_trylock(w->outputLock))
@@ -372,7 +359,7 @@ void *doWork(void *arg)
                 {
                     while (pthread_mutex_trylock(w->outputLock))
                         ;
-                    printf("(%i) Rejected.\n\n", (int)pthread_self());
+                    printf("(%i) Rejected (h=%u n=%u).\n\n", (int)pthread_self(), h, nparents);
                     if (w->interact && w->firstThread == self)
                         fgets(buf, sizeof(buf), stdin);
                     pthread_mutex_unlock(w->outputLock);
@@ -383,8 +370,8 @@ void *doWork(void *arg)
         // Right
         if (r & 0x1)
         {
-            memcpy(plate->s, d->p->s, PUZZLE_SIZE * PUZZLE_SIZE);
-            swap(plate->s + rc[0] * PUZZLE_SIZE + rc[1], plate->s + rc[0] * PUZZLE_SIZE + (rc[1] + 1));
+            memcpy(plate, d->p, PUZZLE_SIZE * PUZZLE_SIZE);
+            swap(plate + rc[0] * PUZZLE_SIZE + rc[1], plate + rc[0] * PUZZLE_SIZE + (rc[1] + 1));
             if (w->debug)
             {
                 while (pthread_mutex_trylock(w->outputLock))
@@ -396,37 +383,30 @@ void *doWork(void *arg)
 
             h = CalcDis(plate, w->goal, buffers);
             nparents = d->nparents + 1;
+            if (h + nparents > d->h + d->nparents)
+                bad += 1;
 
-            plateBetter = 0;
             while (pthread_rwlock_tryrdlock(w->platesLock))
                 ;
             findResult = FindPlate(plates, plate);
-            if (findResult)
-                if (nparents + h < findResult->parent->nparents + findResult->parent->h)
-                    plateBetter = 1;
             pthread_rwlock_unlock(w->platesLock);
 
-            if (!findResult || plateBetter)
+            if (!findResult)
             {
                 while (pthread_rwlock_trywrlock(w->platesLock))
                     ;
                 next = DecisionBankAdd(dbank);
-                if (plateBetter)
-                    findResult->parent = next;
-                else
-                    AddPlate(plates, plate);
+                AddPlate(plates, plate);
                 pthread_rwlock_unlock(w->platesLock);
                 findResult = plate;
                 plate = next->p;
                 next->p = findResult;
-                next->p->parent = next;
                 next->h = h;
                 next->parent = d;
                 next->nparents = nparents;
-                while (pthread_rwlock_trywrlock(w->pqLock))
-                    ;
-                EnqueuePQ(pq, next);
-                pthread_rwlock_unlock(w->pqLock);
+                d->ref += 1;
+                children[chId] = next;
+                chId += 1;
                 if (w->debug)
                 {
                     while (pthread_mutex_trylock(w->outputLock))
@@ -443,16 +423,38 @@ void *doWork(void *arg)
                 {
                     while (pthread_mutex_trylock(w->outputLock))
                         ;
-                    printf("(%i) Rejected.\n\n", (int)pthread_self());
+                    printf("(%i) Rejected (h=%u n=%u).\n\n", (int)pthread_self(), h, nparents);
                     if (w->interact && w->firstThread == self)
                         fgets(buf, sizeof(buf), stdin);
                     pthread_mutex_unlock(w->outputLock);
                 }
             }
         }
+
+        for (i = 0; i < chId; i += 1)
+        {
+            if ((children[i])->h + (children[i])->nparents <= w->thres)
+            {
+                while (pthread_rwlock_trywrlock(w->pqLock))
+                    ;
+                EnqueuePQ(pq, children[i]);
+                pthread_rwlock_unlock(w->pqLock);
+            }
+            else
+            {
+                while (pthread_rwlock_trywrlock(w->pq2Lock))
+                    ;
+                EnqueuePQ(pq2, children[i]);
+                pthread_rwlock_unlock(w->pq2Lock);
+            }
+        }
+
+        while (pthread_rwlock_trywrlock(w->pq3Lock))
+            ;
+        EnqueuePQ(pq3, d);
+        pthread_rwlock_unlock(w->pq3Lock);
     }
 
-    free(plate->s);
     free(plate);
     free(buffers[0]);
     free(buffers[1]);

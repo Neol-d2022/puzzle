@@ -1,17 +1,11 @@
 #include <string.h>
 
 #include "avl.h"
-#include "plate.h"
 #include "main.h"
 
 int cmpPlate(void *a, void *b)
 {
-    PLATE *c, *d;
-
-    c = (PLATE *)a;
-    d = (PLATE *)b;
-
-    return memcmp(c->s, d->s, PUZZLE_SIZE * PUZZLE_SIZE);
+    return memcmp(a, b, PUZZLE_SIZE * PUZZLE_SIZE);
 }
 
 AVL_TREE *CreatePlates(void)
@@ -21,16 +15,15 @@ AVL_TREE *CreatePlates(void)
 
 void DestroyPlates(AVL_TREE *plates)
 {
-    //free(plates->base);
     AVL_Destroy(plates);
 }
 
-void AddPlate(AVL_TREE *plates, PLATE *p)
+void AddPlate(AVL_TREE *plates, unsigned char *p)
 {
     AVL_Insert(plates, p);
 }
 
-PLATE *FindPlate(AVL_TREE *plates, PLATE *key)
+unsigned char *FindPlate(AVL_TREE *plates, unsigned char *key)
 {
-    return AVL_Retrieve(plates, key);
+    return (unsigned char*)AVL_Retrieve(plates, key);
 }

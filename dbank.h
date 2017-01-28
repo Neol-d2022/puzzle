@@ -9,5 +9,6 @@ typedef AVL_TREE DBank;
 DBank *CreateDecisionBank(void);
 DESICISON *DecisionBankAdd(DBank *dbank);
 void DecisionBankDestory(DBank *dbank);
+void DecisionBankClearUp(DBank *dbank, AVL_TREE *pq, AVL_TREE *plates);
 
 #endif
