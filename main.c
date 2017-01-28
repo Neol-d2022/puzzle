@@ -523,7 +523,7 @@ void* doWork(void *arg) {
     PLATE *findResult;
     size_t s;
     pthread_t self = pthread_self();
-    unsigned int i, rc[2], idle, h, nparents;
+    unsigned int i, rc[2], idle, h, nparents, updater;
     int dequeued, r, exiting, plateBetter;
 
     w = (WORKSPACE*)arg;
@@ -531,7 +531,7 @@ void* doWork(void *arg) {
     pq = w->pq;
     plates = w->plates;
 
-    idle = 0;
+    updater = idle = 0;
     plate = (PLATE*)malloc(sizeof(*plate));
     plate->s = (unsigned char*)malloc(PUZZLE_SIZE * PUZZLE_SIZE);
     buffers[0] = (unsigned int*)malloc(sizeof(**buffers) * PUZZLE_SIZE * PUZZLE_SIZE);
@@ -564,34 +564,37 @@ void* doWork(void *arg) {
         else idle = 0;
         
         if(self == w->firstThread && w->interact) {
-            while(pthread_rwlock_tryrdlock(w->platesLock));
-            while(pthread_rwlock_tryrdlock(w->pqLock));
-            while(pthread_mutex_trylock(w->outputLock));
-
-            if(w->debug) {
-                printPlate(d->p, stdout);
-                printf("(%i) Dequeued(h=%u n=%u).\n\n", (int)pthread_self(), d->h, d->nparents);
-                fgets(buf, sizeof(buf), stdin);
-            }
-
             if (*(w->min) > d->h)
                 *(w->min) = d->h;
             if (d->h > *(w->max))
                 *(w->max) = d->h;
 
-            if(w->debug) {
-                s = printf("minD=%u maxD=%u Qsize=%u Psize=%u dis=%u steps=%u\n", *(w->min), *(w->max), pq->count, plates->count, d->h, d->nparents);
+            while(pthread_rwlock_tryrdlock(w->platesLock));
+            if((updater & 0x3FFF) == 0x3FFF) {
+                while(pthread_rwlock_tryrdlock(w->pqLock));
+                while(pthread_mutex_trylock(w->outputLock));
+
+                if(w->debug) {
+                    printPlate(d->p, stdout);
+                    printf("(%i) Dequeued(h=%u n=%u).\n\n", (int)pthread_self(), d->h, d->nparents);
+                    fgets(buf, sizeof(buf), stdin);
+                }
+
+                if(w->debug) {
+                    s = printf("minD=%u maxD=%u Qsize=%u Psize=%u dis=%u steps=%u\n", *(w->min), *(w->max), pq->count, plates->count, d->h, d->nparents);
+                }
+                else {
+                    s = printf("minD=%u maxD=%u Qsize=%u Psize=%u dis=%u steps=%u ", *(w->min), *(w->max), pq->count, plates->count, d->h, d->nparents);
+                    memset(buf, '\b', s);
+                    buf[s] = '\0';
+                    printf("%s", buf);
+                }
+                
+                pthread_mutex_unlock(w->outputLock);
+                pthread_rwlock_unlock(w->pqLock);
             }
-            else {
-                s = printf("minD=%u maxD=%u Qsize=%u Psize=%u dis=%u steps=%u ", *(w->min), *(w->max), pq->count, plates->count, d->h, d->nparents);
-                memset(buf, '\b', s);
-                buf[s] = '\0';
-                printf("%s", buf);
-            }
-            
-            pthread_mutex_unlock(w->outputLock);
-            pthread_rwlock_unlock(w->pqLock);
             pthread_rwlock_unlock(w->platesLock);
+            updater += 1;
         }
 
         if (d->h == 0)
