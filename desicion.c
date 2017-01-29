@@ -14,7 +14,5 @@ void InitD(DESICISON *d)
 
 void DeInitD(DESICISON *d)
 {
-    if (d->parent)
-        d->parent->ref -= 1;
     free(d->p);
 }

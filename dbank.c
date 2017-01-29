@@ -87,6 +87,8 @@ void DecisionBankClearUp(DBank *dbank, AVL_TREE *pq, AVL_TREE *plates)
                     AVL_Delete(pq, base[i]);
                     AVL_Delete(dbank, base[i]);
                     AVL_Delete(plates, base[i]->p);
+                    if ((base[i])->parent)
+                        (base[i])->parent->ref -= 1;
                     DeInitD(base[i]);
                     free(base[i]);
                     base[i] = 0;
