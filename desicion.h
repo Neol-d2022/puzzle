@@ -6,13 +6,14 @@ struct DESICISON_STRUCT;
 typedef struct DESICISON_STRUCT
 {
     unsigned char *p;
-    struct DESICISON_STRUCT *parent;
+    unsigned char *parent;
     unsigned int h; //distance to goal
     unsigned int nparents;
-    unsigned int ref;
+    unsigned int npmax;
 } DESICISON;
 
 void InitD(DESICISON *d);
 void DeInitD(DESICISON *d);
+void AddParent(DESICISON *next, const DESICISON *d, unsigned char c);
 
 #endif

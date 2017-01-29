@@ -7,7 +7,6 @@
 
 #include "avl.h"
 #include "worker.h"
-#include "stack.h"
 #include "input.h"
 #include "util.h"
 #include "core.h"
@@ -23,9 +22,9 @@ int main(int argc, char **argv)
     pthread_rwlock_t pqLock;
     pthread_rwlock_t pq2Lock;
     pthread_rwlock_t pq3Lock;
-    pthread_rwlock_t platesLock;
     pthread_rwlock_t exitLock;
     pthread_mutex_t outputLock;
+    pthread_mutex_t dbankLock;
     unsigned int *buffers[2];
     unsigned char *goal;
     unsigned char *input;
@@ -35,11 +34,8 @@ int main(int argc, char **argv)
     AVL_TREE *pq = CreatePQ();
     AVL_TREE *pq2 = CreatePQ();
     AVL_TREE *pq3 = CreatePQ();
-    AVL_TREE *plates = CreatePlates();
-    STACK *stack = CreateStack();
-    DESICISON *cur;
     clock_t t;
-    unsigned int i, min, max, nthreads = 1;
+    unsigned int i, min, max, nthreads = 1, x[2];
     int r, debug = 0, interact = 1, argci, exiting = 0;
 
     for (argci = 1; argci < argc; argci += 1)
@@ -107,7 +103,6 @@ int main(int argc, char **argv)
     else
         w.CalcDis = CalcDis_fast;
     d->h = (w.CalcDis)(d->p, goal, buffers);
-    AddPlate(plates, d->p);
     EnqueuePQ(pq, d);
     free(buffers[0]);
     free(buffers[1]);
@@ -116,29 +111,28 @@ int main(int argc, char **argv)
     pthread_rwlock_init(&pqLock, 0);
     pthread_rwlock_init(&pq2Lock, 0);
     pthread_rwlock_init(&pq3Lock, 0);
-    pthread_rwlock_init(&platesLock, 0);
     pthread_rwlock_init(&exitLock, 0);
     pthread_mutex_init(&outputLock, 0);
+    pthread_mutex_init(&dbankLock, 0);
     w.pqLock = &pqLock;
     w.pq2Lock = &pq2Lock;
     w.pq3Lock = &pq3Lock;
-    w.platesLock = &platesLock;
     w.exitLock = &exitLock;
     w.outputLock = &outputLock;
+    w.dbankLock = &dbankLock;
     printf("Lock initialized.\n");
     w.goal = goal;
     w.dbank = dbank;
     w.pq = pq;
     w.pq2 = pq2;
     w.pq3 = pq3;
-    w.plates = plates;
     w.exiting = &exiting;
     w.min = &min;
     w.max = &max;
     w.debug = debug;
     w.interact = interact;
     w.dOutput = 0;
-    w.thres = d->h + PUZZLE_SIZE;
+    w.thres = d->h;
     printf("Workspace set up.\n");
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
@@ -164,29 +158,65 @@ restart:
         if (debug)
             printPlate(d->p, stdout);
         printf("\nSolution found (In %.3lf seconds).\n\n", (clock() - t) / (double)CLOCKS_PER_SEC);
-        cur = d;
-        while (cur)
-        {
-            StackAdd(stack, cur);
-            cur = cur->parent;
-        }
+        D1ToD2(FindInPlate(input, 0), x, x + 1);
         if (interact == 0)
         {
-            printf("%u steps\n\n", stack->n - 1);
-            for (i = stack->n - 1; i < stack->n; i -= 1)
+            printf("%u steps\n\n", (w.dOutput)->nparents);
+            for (i = 0; i < (w.dOutput)->nparents; i += 1)
             {
-                printPlate((*((stack->base) + i))->p, stdout);
+                switch (((w.dOutput)->parent)[i])
+                {
+                case 0x8: //Up
+                    swap(input + x[0] * PUZZLE_SIZE + x[1], input + (x[0] - 1) * PUZZLE_SIZE + x[1]);
+                    x[0] -= 1;
+                    break;
+                case 0x4: //Down
+                    swap(input + x[0] * PUZZLE_SIZE + x[1], input + (x[0] + 1) * PUZZLE_SIZE + x[1]);
+                    x[0] += 1;
+                    break;
+                case 0x2: //Left
+                    swap(input + x[0] * PUZZLE_SIZE + x[1], input + x[0] * PUZZLE_SIZE + (x[1] - 1));
+                    x[1] -= 1;
+                    break;
+                case 0x1: //Right
+                    swap(input + x[0] * PUZZLE_SIZE + x[1], input + x[0] * PUZZLE_SIZE + (x[1] + 1));
+                    x[1] += 1;
+                    break;
+                default:
+                    abort();
+                }
+                printPlate(input, stdout);
                 printf("\n");
             }
         }
         else
         {
-            printf("%u steps\n\n", stack->n - 1);
-            for (i = stack->n - 1; i < stack->n; i -= 1)
+            printf("%u steps\n\n", (w.dOutput)->nparents);
+            for (i = 0; i < (w.dOutput)->nparents; i += 1)
             {
-                printPlate((*((stack->base) + i))->p, stdout);
-                if (interact)
-                    fgets(buf, sizeof(buf), stdin);
+                switch (((w.dOutput)->parent)[i])
+                {
+                case 0x8: //Up
+                    swap(input + x[0] * PUZZLE_SIZE + x[1], input + (x[0] - 1) * PUZZLE_SIZE + x[1]);
+                    x[0] -= 1;
+                    break;
+                case 0x4: //Down
+                    swap(input + x[0] * PUZZLE_SIZE + x[1], input + (x[0] + 1) * PUZZLE_SIZE + x[1]);
+                    x[0] += 1;
+                    break;
+                case 0x2: //Left
+                    swap(input + x[0] * PUZZLE_SIZE + x[1], input + x[0] * PUZZLE_SIZE + (x[1] - 1));
+                    x[1] -= 1;
+                    break;
+                case 0x1: //Right
+                    swap(input + x[0] * PUZZLE_SIZE + x[1], input + x[0] * PUZZLE_SIZE + (x[1] + 1));
+                    x[1] += 1;
+                    break;
+                default:
+                    abort();
+                }
+                printPlate(input, stdout);
+                fgets(buf, sizeof(buf), stdin);
             }
         }
     }
@@ -199,7 +229,7 @@ restart:
         pq = w.pq;
         pq2 = w.pq2;
 
-        DecisionBankClearUp(dbank, w.pq3, w.plates);
+        DecisionBankClearUp(dbank, w.pq3);
         DestroyPQ(w.pq3);
         pq3 = w.pq3 = CreatePQ();
         goto restart;
@@ -211,13 +241,9 @@ restart:
     pthread_rwlock_destroy(&pqLock);
     pthread_rwlock_destroy(&pq2Lock);
     pthread_rwlock_destroy(&pq3Lock);
-    pthread_rwlock_destroy(&platesLock);
     pthread_rwlock_destroy(&exitLock);
     pthread_mutex_destroy(&outputLock);
-    //printf("free(stack->base).\n");
-    free(stack->base);
-    //printf("DestroyPlates(plates).\n");
-    DestroyPlates(plates);
+    pthread_mutex_destroy(&dbankLock);
     //printf("DestroyPQ(pq).\n");
     DestroyPQ(pq);
     DestroyPQ(pq2);

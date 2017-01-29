@@ -1,10 +1,19 @@
+#include <stdlib.h>
+#include <string.h>
+
 #include "core.h"
 #include "util.h"
 #include "main.h"
 
+static unsigned int max(unsigned int a, unsigned int b)
+{
+    return (a > b) ? a : b;
+}
+
 unsigned int CalcDis_slow(unsigned char *current, const unsigned char *goal, unsigned int **buffers)
 {
     unsigned int *p = buffers[0], *d = buffers[1];
+    unsigned char *c;
     unsigned int i, j, k, l, x[2];
 
     for (i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; i += 1)
@@ -87,67 +96,88 @@ unsigned int CalcDis_slow(unsigned char *current, const unsigned char *goal, uns
     }
 
     l = 0;
+    c = (unsigned char *)malloc(PUZZLE_SIZE);
     for (i = 0; i < PUZZLE_SIZE; i += 1)
     {
+    calcRow:
+        memset(c, 0, PUZZLE_SIZE);
         for (j = 0; j < PUZZLE_SIZE; j += 1)
         {
             for (k = j + 1; k < PUZZLE_SIZE; k += 1)
             {
-                if (d[(i * PUZZLE_SIZE) + j] == 1 && d[(i * PUZZLE_SIZE) + k] == 2)
+                if ((d[(i * PUZZLE_SIZE) + j] == 1 && d[(i * PUZZLE_SIZE) + k] == 2) ||
+                    (d[(i * PUZZLE_SIZE) + j] == 1 && d[(i * PUZZLE_SIZE) + k] == 0) ||
+                    (d[(i * PUZZLE_SIZE) + j] == 0 && d[(i * PUZZLE_SIZE) + k] == 2))
                 {
-                    l += 2;
-                    d[(i * PUZZLE_SIZE) + j] = 16;
-                    d[(i * PUZZLE_SIZE) + k] = 16;
+                    if (k - j <= max(p[(i * PUZZLE_SIZE) + j], p[(i * PUZZLE_SIZE) + k]))
+                    {
+                        c[j] += 1;
+                        c[k] += 1;
+                    }
                 }
-                if (d[(i * PUZZLE_SIZE) + j] == 1 && d[(i * PUZZLE_SIZE) + k] == 0 && k - j < p[(i * PUZZLE_SIZE) + j])
-                {
-                    l += 2;
-                    d[(i * PUZZLE_SIZE) + j] = 16;
-                    d[(i * PUZZLE_SIZE) + k] = 16;
-                }
-                if (d[(i * PUZZLE_SIZE) + j] == 0 && d[(i * PUZZLE_SIZE) + k] == 2 && k - j < p[(i * PUZZLE_SIZE) + k])
-                {
-                    l += 2;
-                    d[(i * PUZZLE_SIZE) + j] = 16;
-                    d[(i * PUZZLE_SIZE) + k] = 16;
-                }
-                if (d[(j * PUZZLE_SIZE) + i] == 4 && d[(k * PUZZLE_SIZE) + i] == 8)
-                {
-                    l += 2;
-                    d[(j * PUZZLE_SIZE) + i] = 16;
-                    d[(k * PUZZLE_SIZE) + i] = 16;
-                }
-                if (d[(j * PUZZLE_SIZE) + i] == 4 && d[(k * PUZZLE_SIZE) + i] == 0 && k - j < p[(j * PUZZLE_SIZE) + i])
-                {
-                    l += 2;
-                    d[(j * PUZZLE_SIZE) + i] = 16;
-                    d[(k * PUZZLE_SIZE) + i] = 16;
-                }
-                if (d[(j * PUZZLE_SIZE) + i] == 0 && d[(k * PUZZLE_SIZE) + i] == 8 && k - j < p[(k * PUZZLE_SIZE) + i])
-                {
-                    l += 2;
-                    d[(j * PUZZLE_SIZE) + i] = 16;
-                    d[(k * PUZZLE_SIZE) + i] = 16;
-                }
-
-                if (p[(i * PUZZLE_SIZE) + j] == 0)
-                    d[(i * PUZZLE_SIZE) + j] = 0;
-                if (p[(i * PUZZLE_SIZE) + k] == 0)
-                    d[(i * PUZZLE_SIZE) + k] = 0;
-                if (p[(j * PUZZLE_SIZE) + i] == 0)
-                    d[(j * PUZZLE_SIZE) + i] = 0;
-                if (p[(k * PUZZLE_SIZE) + i] == 0)
-                    d[(k * PUZZLE_SIZE) + i] = 0;
             }
         }
+        k = 0;
+        for (j = 1; j < PUZZLE_SIZE; j += 1)
+        {
+            if (c[k] < c[j])
+                k = j;
+        }
+        if (c[k])
+        {
+            d[(i * PUZZLE_SIZE) + k] = 16;
+            p[(i * PUZZLE_SIZE) + k] += 2;
+            goto calcRow;
+        }
+        for (j = 0; j < PUZZLE_SIZE; j += 1)
+        {
+            if (p[(i * PUZZLE_SIZE) + j] == 0)
+                d[(i * PUZZLE_SIZE) + j] = 0;
+        }
+    calcCol:
+        memset(c, 0, PUZZLE_SIZE);
+        for (j = 0; j < PUZZLE_SIZE; j += 1)
+        {
+            for (k = j + 1; k < PUZZLE_SIZE; k += 1)
+            {
+                if ((d[(j * PUZZLE_SIZE) + i] == 4 && d[(k * PUZZLE_SIZE) + i] == 8) ||
+                    (d[(j * PUZZLE_SIZE) + i] == 4 && d[(k * PUZZLE_SIZE) + i] == 0) ||
+                    (d[(j * PUZZLE_SIZE) + i] == 0 && d[(k * PUZZLE_SIZE) + i] == 8))
+                {
+
+                    if (k - j <= max(p[(j * PUZZLE_SIZE) + i], p[(k * PUZZLE_SIZE) + i]))
+                    {
+                        c[j] += 1;
+                        c[k] += 1;
+                    }
+                }
+            }
+        }
+        k = 0;
+        for (j = 1; j < PUZZLE_SIZE; j += 1)
+        {
+            if (c[k] < c[j])
+                k = j;
+        }
+        if (c[k])
+        {
+            d[(k * PUZZLE_SIZE) + i] = 16;
+            p[(k * PUZZLE_SIZE) + i] += 2;
+            goto calcCol;
+        }
+        for (j = 0; j < PUZZLE_SIZE; j += 1)
+        {
+            if (p[(j * PUZZLE_SIZE) + i] == 0)
+                d[(j * PUZZLE_SIZE) + i] = 0;
+        }
     }
+    free(c);
 
     k = 0;
     for (i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; i += 1)
     {
         k += p[i];
     }
-    k += l;
     return k;
 }
 
@@ -156,24 +186,7 @@ unsigned int CalcDis_fast(unsigned char *current, const unsigned char *goal, uns
     unsigned int *p = buffers[0], *r = buffers[1];
     unsigned int i, j, k, m, n, x[2];
 
-    for (i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; i += 1)
-    {
-        if (current[i] == 0)
-        {
-            p[i] = 0;
-            continue;
-        }
-        for (j = 0; j < PUZZLE_SIZE * PUZZLE_SIZE; j += 1)
-        {
-            if (current[i] == goal[j])
-            {
-                p[i] = D2Diff(i, j);
-                break;
-            }
-        }
-        if (j >= PUZZLE_SIZE * PUZZLE_SIZE)
-            return -1;
-    }
+    CalcDis_slow(current, goal, buffers);
 
     for (i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; i += 1)
     {

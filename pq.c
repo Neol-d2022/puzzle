@@ -1,12 +1,12 @@
+#include <string.h>
+
 #include "pq.h"
 #include "main.h"
-#include "plates.h"
 
 // Notice: REVERSED!!
 static int cmpPQ(void *a, void *b)
 {
     DESICISON *c, *d;
-    int r;
 
     c = (DESICISON *)a;
     d = (DESICISON *)b;
@@ -23,15 +23,8 @@ static int cmpPQ(void *a, void *b)
         return -1;
     else if (c->nparents < d->nparents)
         return 1;
-    if (c->parent && d->parent)
-    {
-        if ((r = cmpPQ(c->parent, d->parent)) != 0)
-            return r;
-        else
-            return cmpPlate(c->p, d->p);
-    }
     else
-        return cmpPlate(c->p, d->p);
+        return memcmp(c->p, d->p, PUZZLE_SIZE * PUZZLE_SIZE);
 }
 
 AVL_TREE *CreatePQ(void)

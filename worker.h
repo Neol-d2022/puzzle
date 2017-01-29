@@ -7,7 +7,6 @@
 #include "pq.h"
 #include "desicion.h"
 #include "avl.h"
-#include "plates.h"
 #include "core.h"
 
 typedef struct
@@ -17,7 +16,6 @@ typedef struct
     AVL_TREE *pq;       //RW
     AVL_TREE *pq2;      //RW
     AVL_TREE *pq3;      //RW
-    AVL_TREE *plates;   //RW
     int *exiting;       //RW
     DESICISON *dOutput; //WO (OUTPUT)
     unsigned int *min;  //RW
@@ -25,9 +23,9 @@ typedef struct
     pthread_rwlock_t *pqLock;
     pthread_rwlock_t *pq2Lock;
     pthread_rwlock_t *pq3Lock;
-    pthread_rwlock_t *platesLock;
     pthread_rwlock_t *exitLock;
     pthread_mutex_t *outputLock;
+    pthread_mutex_t *dbankLock;
     CalcDisF CalcDis;
     int debug;
     int interact;

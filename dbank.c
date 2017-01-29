@@ -63,39 +63,23 @@ static void _traverseC(void *dataPtr, void *n)
     (w->i) += 1;
 }
 
-void DecisionBankClearUp(DBank *dbank, AVL_TREE *pq, AVL_TREE *plates)
+void DecisionBankClearUp(DBank *dbank, AVL_TREE *pq)
 {
     _WP_R w;
     DESICISON **base;
-    unsigned int i, c;
+    unsigned int i;
 
     base = (DESICISON **)malloc(sizeof(*base) * pq->count);
     w.base = base;
     w.i = 0;
     AVL_Traverse(pq, &w, _traverseC);
 
-    c = 1;
-    while (c)
+    for (i = 0; i < pq->count; i += 1)
     {
-        c = 0;
-        for (i = 0; i < pq->count; i += 1)
-        {
-            if (base[i])
-            {
-                if ((base[i])->ref == 0)
-                {
-                    AVL_Delete(pq, base[i]);
-                    AVL_Delete(dbank, base[i]);
-                    AVL_Delete(plates, base[i]->p);
-                    if ((base[i])->parent)
-                        (base[i])->parent->ref -= 1;
-                    DeInitD(base[i]);
-                    free(base[i]);
-                    base[i] = 0;
-                    c += 1;
-                }
-            }
-        }
+        AVL_Delete(pq, base[i]);
+        AVL_Delete(dbank, base[i]);
+        DeInitD(base[i]);
+        free(base[i]);
     }
 
     free(base);
