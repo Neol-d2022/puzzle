@@ -11,9 +11,9 @@ static int cmpPQ(void *a, void *b)
     c = (DESICISON *)a;
     d = (DESICISON *)b;
 
-    if (c->h + (c->nparents << LEVEL) + (1 << LEVEL) - 1 > d->h + (d->nparents << LEVEL) + (1 << LEVEL) - 1)
+    if (c->h + c->nparents > d->h + d->nparents)
         return -1;
-    else if (c->h + (c->nparents << LEVEL) + (1 << LEVEL) - 1 < d->h + (d->nparents << LEVEL) + (1 << LEVEL) - 1)
+    else if (c->h + c->nparents < d->h + d->nparents)
         return 1;
     else if (c->h > d->h)
         return -1;

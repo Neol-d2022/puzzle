@@ -189,7 +189,7 @@ void *doWork(void *arg)
                 pthread_mutex_unlock(w->outputLock);
             }
 
-            h = CalcDis(plate, w->goal, buffers);
+            h = (w->CalcDis)(plate, w->goal, buffers);
             nparents = d->nparents + 1;
             if (h + nparents > d->h + d->nparents)
                 bad += 1;
@@ -253,7 +253,7 @@ void *doWork(void *arg)
                 pthread_mutex_unlock(w->outputLock);
             }
 
-            h = CalcDis(plate, w->goal, buffers);
+            h = (w->CalcDis)(plate, w->goal, buffers);
             nparents = d->nparents + 1;
             if (h + nparents > d->h + d->nparents)
                 bad += 1;
@@ -317,7 +317,7 @@ void *doWork(void *arg)
                 pthread_mutex_unlock(w->outputLock);
             }
 
-            h = CalcDis(plate, w->goal, buffers);
+            h = (w->CalcDis)(plate, w->goal, buffers);
             nparents = d->nparents + 1;
             if (h + nparents > d->h + d->nparents)
                 bad += 1;
@@ -381,7 +381,7 @@ void *doWork(void *arg)
                 pthread_mutex_unlock(w->outputLock);
             }
 
-            h = CalcDis(plate, w->goal, buffers);
+            h = (w->CalcDis)(plate, w->goal, buffers);
             nparents = d->nparents + 1;
             if (h + nparents > d->h + d->nparents)
                 bad += 1;

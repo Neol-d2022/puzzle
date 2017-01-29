@@ -8,6 +8,7 @@
 #include "desicion.h"
 #include "avl.h"
 #include "plates.h"
+#include "core.h"
 
 typedef struct
 {
@@ -27,6 +28,7 @@ typedef struct
     pthread_rwlock_t *platesLock;
     pthread_rwlock_t *exitLock;
     pthread_mutex_t *outputLock;
+    CalcDisF CalcDis;
     int debug;
     int interact;
     unsigned int thres;
