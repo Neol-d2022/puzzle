@@ -71,7 +71,7 @@ int main(int argc, char **argv)
             argci += 1;
         }
 
-        if (strcmp("best", argv[argci]) == 0 && (argci + 1 < argc))
+        if (strcmp("best", argv[argci]) == 0)
         {
             LEVEL = 1;
         }
