@@ -8,6 +8,7 @@ typedef struct DESICISON_STRUCT
     unsigned char *p;
     unsigned char *parent;
     unsigned int h; //distance to goal
+    unsigned int b;
     unsigned int nparents;
     unsigned int npmax;
 } DESICISON;

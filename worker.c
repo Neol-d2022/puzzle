@@ -19,7 +19,7 @@ void *doWork(void *arg)
     unsigned char *findResult, *plate;
     size_t s;
     pthread_t self = pthread_self();
-    unsigned int i, rc[2], idle, h, nparents, updater, chId, lastMove;
+    unsigned int i, b, rc[2], idle, h, nparents, updater, chId, lastMove;
     int dequeued, r, exiting;
 
     w = (WORKSPACE *)arg;
@@ -82,8 +82,8 @@ void *doWork(void *arg)
         {
             if (*(w->min) > d->h)
                 *(w->min) = d->h;
-            if (d->h > *(w->max))
-                *(w->max) = d->h;
+            if (d->h + d->npmax > *(w->max))
+                *(w->max) = d->h + d->npmax;
 
             {
                 while (pthread_rwlock_tryrdlock(w->thresLock))
@@ -92,8 +92,6 @@ void *doWork(void *arg)
                     ;
                 while (pthread_rwlock_tryrdlock(w->pq2Lock))
                     ;
-                while (pthread_rwlock_tryrdlock(w->pq3Lock))
-                    ;
                 while (pthread_rwlock_tryrdlock(w->dbankLock))
                     ;
                 while (pthread_mutex_trylock(w->outputLock))
@@ -101,11 +99,11 @@ void *doWork(void *arg)
 
                 if (w->debug)
                 {
-                    s = printf("minD=%u maxD=%u thres=%u err=%u Q1=%u Q2=%u Q3=%u Dsize=%u dis=%u steps=%u\n", *(w->min), *(w->max), w->thres, d->h + d->nparents, pq->count, pq2->count, pq3->count, dbank->count, d->h, d->nparents);
+                    s = printf("minD=%u maxH=%u thres=%u err=%u Q1=%u Q2=%u Dsize=%u dis=%u steps=%u\n", *(w->min), *(w->max), w->thres, d->h + d->nparents, pq->count, pq2->count, dbank->count, d->h, d->nparents);
                 }
                 else
                 {
-                    s = printf("minD=%u maxD=%u thres=%u err=%u Q1=%u Q2=%u Q3=%u Dsize=%u dis=%u steps=%u ", *(w->min), *(w->max), w->thres, d->h + d->nparents, pq->count, pq2->count, pq3->count, dbank->count, d->h, d->nparents);
+                    s = printf("minD=%u maxH=%u thres=%u err=%u Q1=%u Q2=%u Dsize=%u dis=%u steps=%u ", *(w->min), *(w->max), w->thres, d->h + d->nparents, pq->count, pq2->count, dbank->count, d->h, d->nparents);
                     memset(buf, '\b', s);
                     buf[s] = '\0';
                     printf("%s", buf);
@@ -113,7 +111,6 @@ void *doWork(void *arg)
 
                 pthread_mutex_unlock(w->outputLock);
                 pthread_rwlock_unlock(w->dbankLock);
-                pthread_rwlock_unlock(w->pq3Lock);
                 pthread_rwlock_unlock(w->pq2Lock);
                 pthread_rwlock_unlock(w->pqLock);
                 pthread_rwlock_unlock(w->thresLock);
@@ -192,7 +189,7 @@ void *doWork(void *arg)
                 pthread_mutex_unlock(w->outputLock);
             }
 
-            h = (w->CalcDis)(plate, w->goal, buffers);
+            h = (w->CalcDis)(plate, w->goal, buffers, &b);
             nparents = d->nparents + 1;
 
             if (lastMove != 0x4)
@@ -204,7 +201,7 @@ void *doWork(void *arg)
                 findResult = plate;
                 plate = next->p;
                 next->p = findResult;
-                next->h = h;
+                next->h = h; next->b = b;
                 AddParent(next, d, 0x8);
                 children[chId] = next;
                 chId += 1;
@@ -246,7 +243,7 @@ void *doWork(void *arg)
                 pthread_mutex_unlock(w->outputLock);
             }
 
-            h = (w->CalcDis)(plate, w->goal, buffers);
+            h = (w->CalcDis)(plate, w->goal, buffers, &b);
             nparents = d->nparents + 1;
 
             if (lastMove != 0x8)
@@ -258,7 +255,7 @@ void *doWork(void *arg)
                 findResult = plate;
                 plate = next->p;
                 next->p = findResult;
-                next->h = h;
+                next->h = h; next->b = b;
                 AddParent(next, d, 0x4);
                 children[chId] = next;
                 chId += 1;
@@ -300,7 +297,7 @@ void *doWork(void *arg)
                 pthread_mutex_unlock(w->outputLock);
             }
 
-            h = (w->CalcDis)(plate, w->goal, buffers);
+            h = (w->CalcDis)(plate, w->goal, buffers, &b);
             nparents = d->nparents + 1;
 
             if (lastMove != 0x1)
@@ -312,7 +309,7 @@ void *doWork(void *arg)
                 findResult = plate;
                 plate = next->p;
                 next->p = findResult;
-                next->h = h;
+                next->h = h; next->b = b;
                 AddParent(next, d, 0x2);
                 children[chId] = next;
                 chId += 1;
@@ -354,7 +351,7 @@ void *doWork(void *arg)
                 pthread_mutex_unlock(w->outputLock);
             }
 
-            h = (w->CalcDis)(plate, w->goal, buffers);
+            h = (w->CalcDis)(plate, w->goal, buffers, &b);
             nparents = d->nparents + 1;
 
             if (lastMove != 0x2)
@@ -366,7 +363,7 @@ void *doWork(void *arg)
                 findResult = plate;
                 plate = next->p;
                 next->p = findResult;
-                next->h = h;
+                next->h = h; next->b = b;
                 AddParent(next, d, 0x1);
                 children[chId] = next;
                 chId += 1;

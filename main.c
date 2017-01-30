@@ -102,7 +102,7 @@ int main(int argc, char **argv)
         w.CalcDis = CalcDis_slow;
     else
         w.CalcDis = CalcDis_fast;
-    d->h = (w.CalcDis)(d->p, goal, buffers);
+    d->h = (w.CalcDis)(d->p, goal, buffers, &(d->b));
     EnqueuePQ(pq, d);
     free(buffers);
 

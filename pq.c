@@ -38,6 +38,10 @@ static int cmpPQ(void *a, void *b)
         return -1;
     else if (c->nparents < d->nparents)
         return 1;
+    else if (c->b > d->b)
+        return -1;
+    else if (c->b < d->b)
+        return 1;
     else
         return cmpPtrV(a, b);
 }
