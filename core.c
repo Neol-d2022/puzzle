@@ -253,7 +253,10 @@ unsigned int CalcDis_slow(unsigned char *current, const unsigned char *goal, uns
         if (p[i] == 0 || i == l)
             continue;
         if (CheckConflict(d, i, 0))
-            p[i] += 1;
+        {
+            g += 1;
+            break;
+        }
     }
 
     k = 0;
