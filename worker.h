@@ -24,6 +24,7 @@ typedef struct
     pthread_rwlock_t *pq2Lock;
     pthread_rwlock_t *pq3Lock;
     pthread_rwlock_t *exitLock;
+    pthread_rwlock_t *thresLock;
     pthread_mutex_t *outputLock;
     pthread_mutex_t *dbankLock;
     CalcDisF CalcDis;

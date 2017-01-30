@@ -1,4 +1,3 @@
-
 #include <stdlib.h>
 
 #include "dbank.h"
@@ -67,14 +66,15 @@ void DecisionBankClearUp(DBank *dbank, AVL_TREE *pq)
 {
     _WP_R w;
     DESICISON **base;
-    unsigned int i;
+    unsigned int i, n;
 
     base = (DESICISON **)malloc(sizeof(*base) * pq->count);
     w.base = base;
     w.i = 0;
     AVL_Traverse(pq, &w, _traverseC);
 
-    for (i = 0; i < pq->count; i += 1)
+    n = pq->count;
+    for (i = 0; i < n; i += 1)
     {
         AVL_Delete(pq, base[i]);
         AVL_Delete(dbank, base[i]);

@@ -3,6 +3,21 @@
 #include "pq.h"
 #include "main.h"
 
+static int cmpPtrV(void *a, void *b)
+{
+    size_t c, d;
+
+    c = (size_t)a;
+    d = (size_t)b;
+
+    if (c > d)
+        return 1;
+    else if (c < d)
+        return -1;
+    else
+        return 0;
+}
+
 // Notice: REVERSED!!
 static int cmpPQ(void *a, void *b)
 {
@@ -24,7 +39,7 @@ static int cmpPQ(void *a, void *b)
     else if (c->nparents < d->nparents)
         return 1;
     else
-        return memcmp(c->p, d->p, PUZZLE_SIZE * PUZZLE_SIZE);
+        return cmpPtrV(a, b);
 }
 
 AVL_TREE *CreatePQ(void)

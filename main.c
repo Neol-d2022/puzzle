@@ -23,9 +23,10 @@ int main(int argc, char **argv)
     pthread_rwlock_t pq2Lock;
     pthread_rwlock_t pq3Lock;
     pthread_rwlock_t exitLock;
+    pthread_rwlock_t thresLock;
     pthread_mutex_t outputLock;
     pthread_mutex_t dbankLock;
-    unsigned int *buffers[2];
+    unsigned char *buffers;
     unsigned char *goal;
     unsigned char *input;
     pthread_t *th;
@@ -93,8 +94,7 @@ int main(int argc, char **argv)
     printPlate(input, stdout);
     printf("\n");
 
-    buffers[0] = (unsigned int *)malloc(sizeof(**buffers) * PUZZLE_SIZE * PUZZLE_SIZE);
-    buffers[1] = (unsigned int *)malloc(sizeof(**buffers) * PUZZLE_SIZE * PUZZLE_SIZE);
+    buffers = (unsigned char *)malloc(GetBufSize());
     t = clock();
     d = DecisionBankAdd(dbank);
     memcpy(d->p, input, PUZZLE_SIZE * PUZZLE_SIZE);
@@ -104,20 +104,21 @@ int main(int argc, char **argv)
         w.CalcDis = CalcDis_fast;
     d->h = (w.CalcDis)(d->p, goal, buffers);
     EnqueuePQ(pq, d);
-    free(buffers[0]);
-    free(buffers[1]);
+    free(buffers);
 
     max = min = d->h;
     pthread_rwlock_init(&pqLock, 0);
     pthread_rwlock_init(&pq2Lock, 0);
     pthread_rwlock_init(&pq3Lock, 0);
     pthread_rwlock_init(&exitLock, 0);
+    pthread_rwlock_init(&thresLock, 0);
     pthread_mutex_init(&outputLock, 0);
     pthread_mutex_init(&dbankLock, 0);
     w.pqLock = &pqLock;
     w.pq2Lock = &pq2Lock;
     w.pq3Lock = &pq3Lock;
     w.exitLock = &exitLock;
+    w.thresLock = &thresLock;
     w.outputLock = &outputLock;
     w.dbankLock = &dbankLock;
     printf("Lock initialized.\n");
@@ -164,27 +165,7 @@ restart:
             printf("%u steps\n\n", (w.dOutput)->nparents);
             for (i = 0; i < (w.dOutput)->nparents; i += 1)
             {
-                switch (((w.dOutput)->parent)[i])
-                {
-                case 0x8: //Up
-                    swap(input + x[0] * PUZZLE_SIZE + x[1], input + (x[0] - 1) * PUZZLE_SIZE + x[1]);
-                    x[0] -= 1;
-                    break;
-                case 0x4: //Down
-                    swap(input + x[0] * PUZZLE_SIZE + x[1], input + (x[0] + 1) * PUZZLE_SIZE + x[1]);
-                    x[0] += 1;
-                    break;
-                case 0x2: //Left
-                    swap(input + x[0] * PUZZLE_SIZE + x[1], input + x[0] * PUZZLE_SIZE + (x[1] - 1));
-                    x[1] -= 1;
-                    break;
-                case 0x1: //Right
-                    swap(input + x[0] * PUZZLE_SIZE + x[1], input + x[0] * PUZZLE_SIZE + (x[1] + 1));
-                    x[1] += 1;
-                    break;
-                default:
-                    abort();
-                }
+                move(input, ((w.dOutput)->parent)[i], x);
                 printPlate(input, stdout);
                 printf("\n");
             }
@@ -194,27 +175,7 @@ restart:
             printf("%u steps\n\n", (w.dOutput)->nparents);
             for (i = 0; i < (w.dOutput)->nparents; i += 1)
             {
-                switch (((w.dOutput)->parent)[i])
-                {
-                case 0x8: //Up
-                    swap(input + x[0] * PUZZLE_SIZE + x[1], input + (x[0] - 1) * PUZZLE_SIZE + x[1]);
-                    x[0] -= 1;
-                    break;
-                case 0x4: //Down
-                    swap(input + x[0] * PUZZLE_SIZE + x[1], input + (x[0] + 1) * PUZZLE_SIZE + x[1]);
-                    x[0] += 1;
-                    break;
-                case 0x2: //Left
-                    swap(input + x[0] * PUZZLE_SIZE + x[1], input + x[0] * PUZZLE_SIZE + (x[1] - 1));
-                    x[1] -= 1;
-                    break;
-                case 0x1: //Right
-                    swap(input + x[0] * PUZZLE_SIZE + x[1], input + x[0] * PUZZLE_SIZE + (x[1] + 1));
-                    x[1] += 1;
-                    break;
-                default:
-                    abort();
-                }
+                move(input, ((w.dOutput)->parent)[i], x);
                 printPlate(input, stdout);
                 fgets(buf, sizeof(buf), stdin);
             }
@@ -222,7 +183,7 @@ restart:
     }
     else
     {
-        w.thres += 1;
+        w.thres += PUZZLE_SIZE;
 
         w.pq = pq2;
         w.pq2 = pq;
@@ -242,6 +203,7 @@ restart:
     pthread_rwlock_destroy(&pq2Lock);
     pthread_rwlock_destroy(&pq3Lock);
     pthread_rwlock_destroy(&exitLock);
+    pthread_rwlock_destroy(&thresLock);
     pthread_mutex_destroy(&outputLock);
     pthread_mutex_destroy(&dbankLock);
     //printf("DestroyPQ(pq).\n");

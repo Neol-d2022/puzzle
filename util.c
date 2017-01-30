@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "main.h"
 
@@ -71,5 +72,30 @@ void printPlate(const unsigned char *p, FILE *f)
             fprintf(f, "%3u\n", (unsigned int)(p[j * PUZZLE_SIZE + PUZZLE_SIZE - 1]));
         else
             fprintf(f, "   \n");
+    }
+}
+
+void move(unsigned char *p, unsigned int dChr, unsigned int *x)
+{
+    switch (dChr)
+    {
+    case 0x8: //Up
+        swap(p + x[0] * PUZZLE_SIZE + x[1], p + (x[0] - 1) * PUZZLE_SIZE + x[1]);
+        x[0] -= 1;
+        break;
+    case 0x4: //Down
+        swap(p + x[0] * PUZZLE_SIZE + x[1], p + (x[0] + 1) * PUZZLE_SIZE + x[1]);
+        x[0] += 1;
+        break;
+    case 0x2: //Left
+        swap(p + x[0] * PUZZLE_SIZE + x[1], p + x[0] * PUZZLE_SIZE + (x[1] - 1));
+        x[1] -= 1;
+        break;
+    case 0x1: //Right
+        swap(p + x[0] * PUZZLE_SIZE + x[1], p + x[0] * PUZZLE_SIZE + (x[1] + 1));
+        x[1] += 1;
+        break;
+    default:
+        abort();
     }
 }

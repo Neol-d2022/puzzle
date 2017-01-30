@@ -10,10 +10,11 @@ static unsigned int max(unsigned int a, unsigned int b)
     return (a > b) ? a : b;
 }
 
-unsigned int CalcDis_slow(unsigned char *current, const unsigned char *goal, unsigned int **buffers)
+unsigned int CalcDis_slow(unsigned char *current, const unsigned char *goal, unsigned char *buffers)
 {
-    unsigned int *p = buffers[0], *d = buffers[1];
-    unsigned char *c;
+    unsigned int *p = (unsigned int *)buffers;
+    unsigned int *d = (unsigned int *)(buffers) + PUZZLE_SIZE * PUZZLE_SIZE;
+    unsigned char *c = buffers + PUZZLE_SIZE * PUZZLE_SIZE * 2 * sizeof(unsigned int);
     unsigned int i, j, k, l, x[2];
 
     for (i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; i += 1)
@@ -96,13 +97,14 @@ unsigned int CalcDis_slow(unsigned char *current, const unsigned char *goal, uns
     }
 
     l = 0;
-    c = (unsigned char *)malloc(PUZZLE_SIZE);
     for (i = 0; i < PUZZLE_SIZE; i += 1)
     {
     calcRow:
-        memset(c, 0, PUZZLE_SIZE);
+        memset(c, 0, PUZZLE_SIZE * 2);
         for (j = 0; j < PUZZLE_SIZE; j += 1)
         {
+            if (p[(i * PUZZLE_SIZE) + j] == 0)
+                c[PUZZLE_SIZE + j] = 1;
             for (k = j + 1; k < PUZZLE_SIZE; k += 1)
             {
                 if ((d[(i * PUZZLE_SIZE) + j] == 1 && d[(i * PUZZLE_SIZE) + k] == 2) ||
@@ -131,13 +133,15 @@ unsigned int CalcDis_slow(unsigned char *current, const unsigned char *goal, uns
         }
         for (j = 0; j < PUZZLE_SIZE; j += 1)
         {
-            if (p[(i * PUZZLE_SIZE) + j] == 0)
+            if (c[PUZZLE_SIZE + j] == 1)
                 d[(i * PUZZLE_SIZE) + j] = 0;
         }
     calcCol:
-        memset(c, 0, PUZZLE_SIZE);
+        memset(c, 0, PUZZLE_SIZE * 2);
         for (j = 0; j < PUZZLE_SIZE; j += 1)
         {
+            if (p[(j * PUZZLE_SIZE) + i] == 0)
+                c[PUZZLE_SIZE + j] = 1;
             for (k = j + 1; k < PUZZLE_SIZE; k += 1)
             {
                 if ((d[(j * PUZZLE_SIZE) + i] == 4 && d[(k * PUZZLE_SIZE) + i] == 8) ||
@@ -167,11 +171,10 @@ unsigned int CalcDis_slow(unsigned char *current, const unsigned char *goal, uns
         }
         for (j = 0; j < PUZZLE_SIZE; j += 1)
         {
-            if (p[(j * PUZZLE_SIZE) + i] == 0)
+            if (c[PUZZLE_SIZE + j] == 1)
                 d[(j * PUZZLE_SIZE) + i] = 0;
         }
     }
-    free(c);
 
     k = 0;
     for (i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; i += 1)
@@ -181,9 +184,10 @@ unsigned int CalcDis_slow(unsigned char *current, const unsigned char *goal, uns
     return k;
 }
 
-unsigned int CalcDis_fast(unsigned char *current, const unsigned char *goal, unsigned int **buffers)
+unsigned int CalcDis_fast(unsigned char *current, const unsigned char *goal, unsigned char *buffers)
 {
-    unsigned int *p = buffers[0], *r = buffers[1];
+    unsigned int *p = (unsigned int *)buffers;
+    unsigned int *r = (unsigned int *)(buffers) + PUZZLE_SIZE * PUZZLE_SIZE;
     unsigned int i, j, k, m, n, x[2];
 
     CalcDis_slow(current, goal, buffers);
@@ -217,4 +221,19 @@ unsigned int CalcDis_fast(unsigned char *current, const unsigned char *goal, uns
     }
 
     return k;
+}
+
+unsigned int GetBufSize()
+{
+    return (PUZZLE_SIZE * PUZZLE_SIZE * 2 * sizeof(unsigned int)) + (PUZZLE_SIZE * 2 * sizeof(unsigned char));
+}
+
+CalcDisF GetCalcFunc()
+{
+    if (LEVEL == 0)
+        return CalcDis_fast;
+    else if (LEVEL == 1)
+        return CalcDis_slow;
+    else
+        return (CalcDisF)0;
 }

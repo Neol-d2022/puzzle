@@ -11,7 +11,7 @@
 void *doWork(void *arg)
 {
     char buf[256];
-    unsigned int *buffers[2];
+    unsigned char *buffers;
     DESICISON *d, *next, *children[4];
     DBank *dbank;
     AVL_TREE *pq, *pq2, *pq3;
@@ -30,8 +30,7 @@ void *doWork(void *arg)
 
     updater = idle = 0;
     plate = (unsigned char *)malloc(PUZZLE_SIZE * PUZZLE_SIZE);
-    buffers[0] = (unsigned int *)malloc(sizeof(**buffers) * PUZZLE_SIZE * PUZZLE_SIZE);
-    buffers[1] = (unsigned int *)malloc(sizeof(**buffers) * PUZZLE_SIZE * PUZZLE_SIZE);
+    buffers = (unsigned char *)malloc(GetBufSize());
     while (1)
     {
         while (pthread_rwlock_tryrdlock(w->exitLock))
@@ -87,7 +86,13 @@ void *doWork(void *arg)
                 *(w->max) = d->h;
 
             {
+                while (pthread_rwlock_tryrdlock(w->thresLock))
+                    ;
                 while (pthread_rwlock_tryrdlock(w->pqLock))
+                    ;
+                while (pthread_rwlock_tryrdlock(w->pq2Lock))
+                    ;
+                while (pthread_rwlock_tryrdlock(w->pq3Lock))
                     ;
                 while (pthread_rwlock_tryrdlock(w->dbankLock))
                     ;
@@ -96,11 +101,11 @@ void *doWork(void *arg)
 
                 if (w->debug)
                 {
-                    s = printf("minD=%u maxD=%u err=%u Qsize=%u Dsize=%u dis=%u steps=%u\n", *(w->min), *(w->max), d->h + d->nparents, pq->count, dbank->count, d->h, d->nparents);
+                    s = printf("minD=%u maxD=%u thres=%u err=%u Q1=%u Q2=%u Q3=%u Dsize=%u dis=%u steps=%u\n", *(w->min), *(w->max), w->thres, d->h + d->nparents, pq->count, pq2->count, pq3->count, dbank->count, d->h, d->nparents);
                 }
                 else
                 {
-                    s = printf("minD=%u maxD=%u err=%u Qsize=%u Dsize=%u dis=%u steps=%u ", *(w->min), *(w->max), d->h + d->nparents, pq->count, dbank->count, d->h, d->nparents);
+                    s = printf("minD=%u maxD=%u thres=%u err=%u Q1=%u Q2=%u Q3=%u Dsize=%u dis=%u steps=%u ", *(w->min), *(w->max), w->thres, d->h + d->nparents, pq->count, pq2->count, pq3->count, dbank->count, d->h, d->nparents);
                     memset(buf, '\b', s);
                     buf[s] = '\0';
                     printf("%s", buf);
@@ -108,7 +113,10 @@ void *doWork(void *arg)
 
                 pthread_mutex_unlock(w->outputLock);
                 pthread_rwlock_unlock(w->dbankLock);
+                pthread_rwlock_unlock(w->pq3Lock);
+                pthread_rwlock_unlock(w->pq2Lock);
                 pthread_rwlock_unlock(w->pqLock);
+                pthread_rwlock_unlock(w->thresLock);
             }
             updater += 1;
         }
@@ -388,6 +396,8 @@ void *doWork(void *arg)
 
         for (i = 0; i < chId; i += 1)
         {
+            while (pthread_rwlock_tryrdlock(w->thresLock))
+                ;
             if ((children[i])->h + (children[i])->nparents <= w->thres)
             {
                 while (pthread_rwlock_trywrlock(w->pqLock))
@@ -402,16 +412,33 @@ void *doWork(void *arg)
                 EnqueuePQ(pq2, children[i]);
                 pthread_rwlock_unlock(w->pq2Lock);
             }
+            pthread_rwlock_unlock(w->thresLock);
         }
 
         while (pthread_rwlock_trywrlock(w->pq3Lock))
             ;
         EnqueuePQ(pq3, d);
         pthread_rwlock_unlock(w->pq3Lock);
+
+        if (self == w->firstThread)
+        {
+            while (pthread_rwlock_tryrdlock(w->pq3Lock))
+                ;
+            if (pq3->count >= 0xFFFF * PUZZLE_SIZE)
+            {
+                pthread_rwlock_unlock(w->pq3Lock);
+                while (pthread_rwlock_trywrlock(w->pq3Lock))
+                    ;
+                while (pthread_rwlock_trywrlock(w->dbankLock))
+                    ;
+                DecisionBankClearUp(dbank, w->pq3);
+                pthread_rwlock_unlock(w->dbankLock);
+            }
+            pthread_rwlock_unlock(w->pq3Lock);
+        }
     }
 
     free(plate);
-    free(buffers[0]);
-    free(buffers[1]);
+    free(buffers);
     return 0;
 }
