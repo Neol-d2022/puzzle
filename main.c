@@ -163,6 +163,8 @@ restart:
         if (interact == 0)
         {
             printf("%u steps\n\n", (w.dOutput)->nparents);
+            printPlate(input, stdout);
+            printf("\n");
             for (i = 0; i < (w.dOutput)->nparents; i += 1)
             {
                 move(input, ((w.dOutput)->parent)[i], x);
@@ -173,6 +175,8 @@ restart:
         else
         {
             printf("%u steps\n\n", (w.dOutput)->nparents);
+            printPlate(input, stdout);
+            fgets(buf, sizeof(buf), stdin);
             for (i = 0; i < (w.dOutput)->nparents; i += 1)
             {
                 move(input, ((w.dOutput)->parent)[i], x);

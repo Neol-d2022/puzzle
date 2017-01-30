@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "core.h"
 #include "util.h"
@@ -109,7 +110,7 @@ unsigned int CalcDis_slow(unsigned char *current, const unsigned char *goal, uns
         {
             p[i] = 0;
             d[i] = 32;
-            s[i] = D2Diff(i, FindInPlate(goal, 0));
+            s[i] = FindInPlate(goal, 0);
             if (blankDis)
                 *blankDis = s[i];
             continue;
