@@ -150,39 +150,6 @@ unsigned int CalcDis_slow(unsigned char *current, const unsigned char *goal, uns
             return -1;
     }
 
-    for (i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; i += 1)
-    {
-        if (p[i] == 0 && d[i] != 32)
-            continue;
-        D1ToD2(i, x, x + 1);
-        l = 0;
-        for (j = 0; j < 3; j += 1)
-        {
-            if (x[0] - 1 + j >= PUZZLE_SIZE)
-                continue;
-            for (k = 0; k < 3; k += 1)
-            {
-                if (x[1] - 1 + k >= PUZZLE_SIZE)
-                    continue;
-                if (j != 1 && k != 1)
-                    continue;
-                if (j == 1 && k == 1)
-                    continue;
-
-                l += 4;
-                if (p[((x[0] - 1 + j) * PUZZLE_SIZE) + (x[1] - 1 + k)] == 0)
-                    l += 1;
-            }
-        }
-        l = (l >> 2) - (l & 0x4);
-        if (l < 2)
-        {
-            p[i] += (2 - l) * 2;
-            if (d[i] == 32)
-                p[i] -= 2;
-        }
-    }
-
     g = 0;
     for (i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; i += 1)
     {
