@@ -12,19 +12,16 @@ static unsigned int max(unsigned int a, unsigned int b)
     return (a > b) ? a : b;
 }
 
-unsigned int CalcDis_slow(unsigned char *current, const unsigned char *goal, unsigned char *buffers, unsigned int *blankDis)
+unsigned int CalcDis_swap(unsigned char *current, const unsigned char *goal, unsigned char *buffers, unsigned int *blankDis)
 {
-    unsigned int *p = (unsigned int *)buffers;
-    unsigned int *d = (unsigned int *)(buffers) + PUZZLE_SIZE * PUZZLE_SIZE;
+    unsigned int *g = (unsigned int *)buffers;
     unsigned int *s = (unsigned int *)(buffers) + PUZZLE_SIZE * PUZZLE_SIZE * 2;
-    unsigned int i, j, k, l, x[2], g;
+    unsigned int i, j, k;
 
     for (i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; i += 1)
     {
         if (current[i] == 0)
         {
-            p[i] = 0;
-            d[i] = 32;
             s[i] = FindInPlate(goal, 0);
             if (blankDis)
                 *blankDis = D2Diff(s[i], i);
@@ -35,6 +32,55 @@ unsigned int CalcDis_slow(unsigned char *current, const unsigned char *goal, uns
             if (current[i] == goal[j])
             {
                 s[i] = j;
+                break;
+            }
+        }
+        if (j >= PUZZLE_SIZE * PUZZLE_SIZE)
+            return -1;
+    }
+
+    for (i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; i += 1)
+        g[i] = i;
+
+    k = 0;
+    while (memcmp(g, s, PUZZLE_SIZE * PUZZLE_SIZE * sizeof(*g)))
+    {
+        for (i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; i += 1)
+        {
+            if (s[i] != i)
+            {
+                j = s[s[i]];
+                s[s[i]] = s[i];
+                s[i] = j;
+                k += 1;
+                break;
+            }
+        }
+    }
+
+    return k;
+}
+
+unsigned int CalcDis_mhtd(unsigned char *current, const unsigned char *goal, unsigned char *buffers, unsigned int *blankDis)
+{
+    unsigned int *p = (unsigned int *)buffers;
+    unsigned int *d = (unsigned int *)(buffers) + PUZZLE_SIZE * PUZZLE_SIZE;
+    unsigned int i, j, k;
+
+    for (i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; i += 1)
+    {
+        if (current[i] == 0)
+        {
+            p[i] = 0;
+            d[i] = 32;
+            if (blankDis)
+                *blankDis = D2Diff(FindInPlate(goal, 0), i);
+            continue;
+        }
+        for (j = 0; j < PUZZLE_SIZE * PUZZLE_SIZE; j += 1)
+        {
+            if (current[i] == goal[j])
+            {
                 p[i] = D2Diff(i, j);
 
                 d[i] = 0;
@@ -64,6 +110,22 @@ unsigned int CalcDis_slow(unsigned char *current, const unsigned char *goal, uns
         if (j >= PUZZLE_SIZE * PUZZLE_SIZE)
             return -1;
     }
+
+    k = 0;
+    for (i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; i += 1)
+    {
+        k += p[i];
+    }
+    return k;
+}
+
+unsigned int CalcDis_mhtl(unsigned char *current, const unsigned char *goal, unsigned char *buffers, unsigned int *blankDis)
+{
+    unsigned int *p = (unsigned int *)buffers;
+    unsigned int *d = (unsigned int *)(buffers) + PUZZLE_SIZE * PUZZLE_SIZE;
+    unsigned int i, j, k, g, r;
+
+    r = CalcDis_mhtd(current, goal, buffers, blankDis);
 
     g = 0;
     for (i = 0; i < PUZZLE_SIZE; i += 1)
@@ -103,89 +165,7 @@ unsigned int CalcDis_slow(unsigned char *current, const unsigned char *goal, uns
         }
     }
 
-    j = PUZZLE_SIZE * PUZZLE_SIZE;
-    l = FindInPlate(current, 0);
-    for (i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; i += 1)
-    {
-        if (p[i] == 0 || i == l)
-            continue;
-        D1ToD2(i, x, x + 1);
-        if (x[0] == 0)
-        {
-            if (d[i] & 4)
-            {
-                k = D2Diff(l, (x[0] + 1) * PUZZLE_SIZE + x[1]);
-                if (k < j)
-                    j = k;
-            }
-        }
-        else if (x[0] == PUZZLE_SIZE - 1)
-        {
-            if (d[i] & 8)
-            {
-                k = D2Diff(l, (x[0] - 1) * PUZZLE_SIZE + x[1]);
-                if (k < j)
-                    j = k;
-            }
-        }
-        else
-        {
-            if (d[i] & 4)
-            {
-                k = D2Diff(l, (x[0] + 1) * PUZZLE_SIZE + x[1]);
-                if (k < j)
-                    j = k;
-            }
-            if (d[i] & 8)
-            {
-                k = D2Diff(l, (x[0] - 1) * PUZZLE_SIZE + x[1]);
-                if (k < j)
-                    j = k;
-            }
-        }
-        if (x[1] == 0)
-        {
-            if (d[i] & 1)
-            {
-                k = D2Diff(l, x[0] * PUZZLE_SIZE + (x[1] + 1));
-                if (k < j)
-                    j = k;
-            }
-        }
-        else if (x[1] == PUZZLE_SIZE - 1)
-        {
-            if (d[i] & 2)
-            {
-                k = D2Diff(l, x[0] * PUZZLE_SIZE + (x[1] - 1));
-                if (k < j)
-                    j = k;
-            }
-        }
-        else
-        {
-            if (d[i] & 1)
-            {
-                k = D2Diff(l, x[0] * PUZZLE_SIZE + (x[1] + 1));
-                if (k < j)
-                    j = k;
-            }
-            if (d[i] & 2)
-            {
-                k = D2Diff(l, x[0] * PUZZLE_SIZE + (x[1] - 1));
-                if (k < j)
-                    j = k;
-            }
-        }
-    }
-    if (j == PUZZLE_SIZE * PUZZLE_SIZE)
-        j = 0;
-
-    k = 0;
-    for (i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; i += 1)
-    {
-        k += p[i];
-    }
-    return k + j + g;
+    return r + g;
 }
 
 unsigned int CalcDis_fast(unsigned char *current, const unsigned char *goal, unsigned char *buffers, unsigned int *blankDis)
@@ -194,7 +174,7 @@ unsigned int CalcDis_fast(unsigned char *current, const unsigned char *goal, uns
     unsigned int *r = (unsigned int *)(buffers) + PUZZLE_SIZE * PUZZLE_SIZE;
     unsigned int i, j, k, m, n, x[2];
 
-    CalcDis_slow(current, goal, buffers, blankDis);
+    CalcDis_mhtl(current, goal, buffers, blankDis);
 
     for (i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; i += 1)
     {
@@ -237,7 +217,25 @@ CalcDisF GetCalcFunc()
     if (LEVEL == 0)
         return CalcDis_fast;
     else if (LEVEL == 1)
-        return CalcDis_slow;
+        return CalcDis_mhtd;
+    else if (LEVEL == 2)
+        return CalcDis_mhtl;
+    else if (LEVEL == 3)
+        return CalcDis_swap;
     else
         return (CalcDisF)0;
+}
+
+const char *GetCalcFuncStr()
+{
+    if (LEVEL == 0)
+        return "FAST";
+    else if (LEVEL == 1)
+        return "Manhattan Dis w/o Linear conflict";
+    else if (LEVEL == 2)
+        return "Manhattan Dis with Linear conflict";
+    else if (LEVEL == 3)
+        return "SWAP";
+    else
+        return "UNKNOWN";
 }

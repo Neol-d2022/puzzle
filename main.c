@@ -63,14 +63,29 @@ int main(int argc, char **argv)
         if (strcmp("level", argv[argci]) == 0 && (argci + 1 < argc))
         {
             sscanf(argv[argci + 1], "%u", &LEVEL);
-            if (LEVEL > 1)
-                LEVEL = 1;
+            if (LEVEL > 3)
+                LEVEL = 0;
             argci += 1;
         }
 
-        if (strcmp("best", argv[argci]) == 0)
+        if (strcmp("fast", argv[argci]) == 0)
+        {
+            LEVEL = 0;
+        }
+
+        if (strcmp("mhtd", argv[argci]) == 0)
         {
             LEVEL = 1;
+        }
+
+        if (strcmp("mhtl", argv[argci]) == 0)
+        {
+            LEVEL = 2;
+        }
+
+        if (strcmp("swap", argv[argci]) == 0)
+        {
+            LEVEL = 3;
         }
 
         if (strcmp("noninteract", argv[argci]) == 0)
@@ -83,7 +98,7 @@ int main(int argc, char **argv)
     input = (unsigned char *)malloc(PUZZLE_SIZE * PUZZLE_SIZE);
     printf("SIZE = %ux%u\n", PUZZLE_SIZE, PUZZLE_SIZE);
     printf("THREADS = %u\n", nthreads);
-    printf("LEVEL = %s\n", (LEVEL) ? ("BEST") : ("FAST"));
+    printf("LEVEL = %s\n", GetCalcFuncStr());
     printf("Input puzzle for GOAL:\n");
     if ((r = GetPlate(goal, stdin)))
         return r;
@@ -98,10 +113,7 @@ int main(int argc, char **argv)
     t = clock();
     d = DecisionBankAdd(dbank);
     memcpy(d->p, input, PUZZLE_SIZE * PUZZLE_SIZE);
-    if (LEVEL)
-        w.CalcDis = CalcDis_slow;
-    else
-        w.CalcDis = CalcDis_fast;
+    w.CalcDis = GetCalcFunc();
     d->h = (w.CalcDis)(d->p, goal, buffers, &(d->b));
     EnqueuePQ(pq, d);
     free(buffers);
