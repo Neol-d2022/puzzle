@@ -78,11 +78,6 @@ void UpdateShortest(unsigned int *d, unsigned int *a, unsigned int i)
                 u = 1;
             }
         }
-        else if (k[1] > r + 3 && r != (unsigned int)-1)
-        {
-            k[1] = r + 3;
-            u = 1;
-        }
     }
     else if (x[0] == PUZZLE_SIZE - 1)
     {
@@ -94,11 +89,6 @@ void UpdateShortest(unsigned int *d, unsigned int *a, unsigned int i)
                 k[0] = r + 1;
                 u = 1;
             }
-        }
-        else if (k[0] > r + 3 && r != (unsigned int)-1)
-        {
-            k[0] = r + 3;
-            u = 1;
         }
     }
     else
@@ -112,11 +102,6 @@ void UpdateShortest(unsigned int *d, unsigned int *a, unsigned int i)
                 u = 1;
             }
         }
-        else if (k[1] > r + 3 && r != (unsigned int)-1)
-        {
-            k[1] = r + 3;
-            u = 1;
-        }
         r = minA(a + ((i - PUZZLE_SIZE) * 4), 8);
         if (j & 8)
         {
@@ -125,11 +110,6 @@ void UpdateShortest(unsigned int *d, unsigned int *a, unsigned int i)
                 k[0] = r + 1;
                 u = 1;
             }
-        }
-        else if (k[0] > r + 3 && r != (unsigned int)-1)
-        {
-            k[0] = r + 3;
-            u = 1;
         }
     }
 
@@ -144,11 +124,6 @@ void UpdateShortest(unsigned int *d, unsigned int *a, unsigned int i)
                 u = 1;
             }
         }
-        else if (k[3] > r + 3 && r != (unsigned int)-1)
-        {
-            k[3] = r + 3;
-            u = 1;
-        }
     }
     else if (x[1] == PUZZLE_SIZE - 1)
     {
@@ -160,11 +135,6 @@ void UpdateShortest(unsigned int *d, unsigned int *a, unsigned int i)
                 k[2] = r + 1;
                 u = 1;
             }
-        }
-        else if (k[2] > r + 3 && r != (unsigned int)-1)
-        {
-            k[2] = r + 3;
-            u = 1;
         }
     }
     else
@@ -178,11 +148,6 @@ void UpdateShortest(unsigned int *d, unsigned int *a, unsigned int i)
                 u = 1;
             }
         }
-        else if (k[3] > r + 3 && r != (unsigned int)-1)
-        {
-            k[3] = r + 3;
-            u = 1;
-        }
         r = minA(a + ((i - 1) * 4), 2);
         if (j & 2)
         {
@@ -191,11 +156,6 @@ void UpdateShortest(unsigned int *d, unsigned int *a, unsigned int i)
                 k[2] = r + 1;
                 u = 1;
             }
-        }
-        else if (k[2] > r + 3 && r != (unsigned int)-1)
-        {
-            k[2] = r + 3;
-            u = 1;
         }
     }
 

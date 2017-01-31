@@ -189,8 +189,8 @@ restart:
                 move(input, ((w.dOutput)->parent)[i], x);
                 printPlate(input, stdout);
                 h = (w.CalcDis)(input, goal, buffers, &b);
-                e = (w.dOutput)->nparents + h - i;
-                printf("(%u/%u) h = %u, e = %u, b = %u\n", 0, (w.dOutput)->nparents, h, e, b);
+                e = (w.dOutput)->nparents + h - i - 1;
+                printf("(%u/%u) h = %u, e = %u, b = %u\n", i, (w.dOutput)->nparents, h, e, b);
                 printf("\n");
             }
         }
@@ -207,8 +207,8 @@ restart:
                 move(input, ((w.dOutput)->parent)[i], x);
                 printPlate(input, stdout);
                 h = (w.CalcDis)(input, goal, buffers, &b);
-                e = (w.dOutput)->nparents + h - i;
-                printf("(%u/%u) h = %u, e = %u, b = %u\n", 0, (w.dOutput)->nparents, h, e, b);
+                e = (w.dOutput)->nparents + h - i - 1;
+                printf("(%u/%u) h = %u, e = %u, b = %u\n", i, (w.dOutput)->nparents, h, e, b);
                 fgets(buf, sizeof(buf), stdin);
             }
         }

@@ -120,6 +120,55 @@ unsigned int CalcDis_mhtd(unsigned char *current, const unsigned char *goal, uns
     return k;
 }
 
+unsigned int CalcDis_mhtl(unsigned char *current, const unsigned char *goal, unsigned char *buffers, unsigned int *blankDis)
+{
+    unsigned int *p = (unsigned int *)buffers;
+    unsigned int *d = (unsigned int *)(buffers) + PUZZLE_SIZE * PUZZLE_SIZE;
+    unsigned int i, j, k, g, r;
+
+    r = CalcDis_mhtd(current, goal, buffers, blankDis);
+
+    g = 0;
+    for (i = 0; i < PUZZLE_SIZE; i += 1)
+    {
+        for (j = 0; j < PUZZLE_SIZE; j += 1)
+        {
+            for (k = j + 1; k < PUZZLE_SIZE; k += 1)
+            {
+                if ((d[(i * PUZZLE_SIZE) + j] == 1 && d[(i * PUZZLE_SIZE) + k] == 2) ||
+                    (d[(i * PUZZLE_SIZE) + j] == 1 && d[(i * PUZZLE_SIZE) + k] == 0) ||
+                    (d[(i * PUZZLE_SIZE) + j] == 0 && d[(i * PUZZLE_SIZE) + k] == 2))
+                {
+                    if (k - j <= max(p[(i * PUZZLE_SIZE) + j], p[(i * PUZZLE_SIZE) + k]))
+                    {
+                        g += 2;
+                        break;
+                    }
+                }
+            }
+        }
+        for (j = 0; j < PUZZLE_SIZE; j += 1)
+        {
+            for (k = j + 1; k < PUZZLE_SIZE; k += 1)
+            {
+                if ((d[(j * PUZZLE_SIZE) + i] == 4 && d[(k * PUZZLE_SIZE) + i] == 8) ||
+                    (d[(j * PUZZLE_SIZE) + i] == 4 && d[(k * PUZZLE_SIZE) + i] == 0) ||
+                    (d[(j * PUZZLE_SIZE) + i] == 0 && d[(k * PUZZLE_SIZE) + i] == 8))
+                {
+
+                    if (k - j <= max(p[(j * PUZZLE_SIZE) + i], p[(k * PUZZLE_SIZE) + i]))
+                    {
+                        g += 2;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    return r + g;
+}
+
 unsigned int CalcDis_djst(unsigned char *current, const unsigned char *goal, unsigned char *buffers, unsigned int *blankDis)
 {
     unsigned int *p = (unsigned int *)buffers;
@@ -128,7 +177,7 @@ unsigned int CalcDis_djst(unsigned char *current, const unsigned char *goal, uns
     unsigned int *a = (unsigned int *)(buffers) + PUZZLE_SIZE * PUZZLE_SIZE * 3;
     unsigned int i, j, k, l, x[2], r;
 
-    r = CalcDis_mhtd(current, goal, buffers, blankDis);
+    r = CalcDis_mhtl(current, goal, buffers, blankDis);
 
     for (i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; i += 1)
     {
@@ -200,55 +249,6 @@ unsigned int CalcDis_djst(unsigned char *current, const unsigned char *goal, uns
     }
 
     return r;
-}
-
-unsigned int CalcDis_mhtl(unsigned char *current, const unsigned char *goal, unsigned char *buffers, unsigned int *blankDis)
-{
-    unsigned int *p = (unsigned int *)buffers;
-    unsigned int *d = (unsigned int *)(buffers) + PUZZLE_SIZE * PUZZLE_SIZE;
-    unsigned int i, j, k, g, r;
-
-    r = CalcDis_mhtd(current, goal, buffers, blankDis);
-
-    g = 0;
-    for (i = 0; i < PUZZLE_SIZE; i += 1)
-    {
-        for (j = 0; j < PUZZLE_SIZE; j += 1)
-        {
-            for (k = j + 1; k < PUZZLE_SIZE; k += 1)
-            {
-                if ((d[(i * PUZZLE_SIZE) + j] == 1 && d[(i * PUZZLE_SIZE) + k] == 2) ||
-                    (d[(i * PUZZLE_SIZE) + j] == 1 && d[(i * PUZZLE_SIZE) + k] == 0) ||
-                    (d[(i * PUZZLE_SIZE) + j] == 0 && d[(i * PUZZLE_SIZE) + k] == 2))
-                {
-                    if (k - j <= max(p[(i * PUZZLE_SIZE) + j], p[(i * PUZZLE_SIZE) + k]))
-                    {
-                        g += 2;
-                        break;
-                    }
-                }
-            }
-        }
-        for (j = 0; j < PUZZLE_SIZE; j += 1)
-        {
-            for (k = j + 1; k < PUZZLE_SIZE; k += 1)
-            {
-                if ((d[(j * PUZZLE_SIZE) + i] == 4 && d[(k * PUZZLE_SIZE) + i] == 8) ||
-                    (d[(j * PUZZLE_SIZE) + i] == 4 && d[(k * PUZZLE_SIZE) + i] == 0) ||
-                    (d[(j * PUZZLE_SIZE) + i] == 0 && d[(k * PUZZLE_SIZE) + i] == 8))
-                {
-
-                    if (k - j <= max(p[(j * PUZZLE_SIZE) + i], p[(k * PUZZLE_SIZE) + i]))
-                    {
-                        g += 2;
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    return r + g;
 }
 
 unsigned int CalcDis_fast(unsigned char *current, const unsigned char *goal, unsigned char *buffers, unsigned int *blankDis)
