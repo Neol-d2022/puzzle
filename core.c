@@ -6,6 +6,7 @@
 #include "util.h"
 #include "main.h"
 #include "avl.h"
+#include "dijkstra.h"
 
 static unsigned int max(unsigned int a, unsigned int b)
 {
@@ -119,6 +120,88 @@ unsigned int CalcDis_mhtd(unsigned char *current, const unsigned char *goal, uns
     return k;
 }
 
+unsigned int CalcDis_djst(unsigned char *current, const unsigned char *goal, unsigned char *buffers, unsigned int *blankDis)
+{
+    unsigned int *p = (unsigned int *)buffers;
+    unsigned int *d = (unsigned int *)(buffers) + PUZZLE_SIZE * PUZZLE_SIZE;
+    unsigned int *s = (unsigned int *)(buffers) + PUZZLE_SIZE * PUZZLE_SIZE * 2;
+    unsigned int *a = (unsigned int *)(buffers) + PUZZLE_SIZE * PUZZLE_SIZE * 3;
+    unsigned int i, j, k, l, x[2], r;
+
+    r = CalcDis_mhtd(current, goal, buffers, blankDis);
+
+    for (i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; i += 1)
+    {
+        for (j = 0; j < PUZZLE_SIZE * PUZZLE_SIZE; j += 1)
+        {
+            if (current[i] == goal[j])
+            {
+                s[i] = j;
+                break;
+            }
+        }
+    }
+
+    l = FindInPlate(current, 0);
+
+    for (i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; i += 1)
+        for (j = 0; j < 4; j += 1)
+            a[i * 4 + j] = PUZZLE_SIZE * PUZZLE_SIZE;
+
+    a[l * 4 + 0] = a[l * 4 + 1] = a[l * 4 + 2] = a[l * 4 + 3] = 0;
+
+    D1ToD2(l, x, x + 1);
+    if (x[0] == 0)
+        UpdateShortest(d, a, l + PUZZLE_SIZE);
+    else if (x[0] == PUZZLE_SIZE - 1)
+        UpdateShortest(d, a, l - PUZZLE_SIZE);
+    else
+    {
+        UpdateShortest(d, a, l + PUZZLE_SIZE);
+        UpdateShortest(d, a, l - PUZZLE_SIZE);
+    }
+    if (x[1] == 0)
+        UpdateShortest(d, a, l + 1);
+    else if (x[1] == PUZZLE_SIZE - 1)
+        UpdateShortest(d, a, l - 1);
+    else
+    {
+        UpdateShortest(d, a, l + 1);
+        UpdateShortest(d, a, l - 1);
+    }
+
+    printf("\nP = \n");
+    for (j = 0; j < PUZZLE_SIZE; j += 1)
+    {
+        for (k = 0; k < PUZZLE_SIZE - 1; k += 1)
+            printf("%2u ", p[j * PUZZLE_SIZE + k]);
+        printf("%2u\n", p[j * PUZZLE_SIZE + k]);
+    }
+    printf("D = \n");
+    for (j = 0; j < PUZZLE_SIZE; j += 1)
+    {
+        for (k = 0; k < PUZZLE_SIZE - 1; k += 1)
+            printf("%2u ", d[j * PUZZLE_SIZE + k]);
+        printf("%2u\n", d[j * PUZZLE_SIZE + k]);
+    }
+    printf("S = \n");
+    for (j = 0; j < PUZZLE_SIZE; j += 1)
+    {
+        for (k = 0; k < PUZZLE_SIZE - 1; k += 1)
+            printf("%2u ", s[j * PUZZLE_SIZE + k]);
+        printf("%2u\n", s[j * PUZZLE_SIZE + k]);
+    }
+    printf("h = %u\nA = \n", r);
+    for (j = 0; j < PUZZLE_SIZE; j += 1)
+    {
+        for (k = 0; k < PUZZLE_SIZE - 1; k += 1)
+            printf("%2u ", (p[(j * PUZZLE_SIZE) + k]) ? minA(a + ((j * PUZZLE_SIZE) + k) * 4, 0) : 0);
+        printf("%2u\n", (p[(j * PUZZLE_SIZE) + k]) ? minA(a + ((j * PUZZLE_SIZE) + k) * 4, 0) : 0);
+    }
+
+    return r;
+}
+
 unsigned int CalcDis_mhtl(unsigned char *current, const unsigned char *goal, unsigned char *buffers, unsigned int *blankDis)
 {
     unsigned int *p = (unsigned int *)buffers;
@@ -209,7 +292,7 @@ unsigned int CalcDis_fast(unsigned char *current, const unsigned char *goal, uns
 
 unsigned int GetBufSize()
 {
-    return PUZZLE_SIZE * PUZZLE_SIZE * 3 * sizeof(unsigned int);
+    return PUZZLE_SIZE * PUZZLE_SIZE * 7 * sizeof(unsigned int);
 }
 
 CalcDisF GetCalcFunc()
@@ -222,6 +305,8 @@ CalcDisF GetCalcFunc()
         return CalcDis_mhtl;
     else if (LEVEL == 3)
         return CalcDis_swap;
+    else if (LEVEL == 4)
+        return CalcDis_djst;
     else
         return (CalcDisF)0;
 }
@@ -235,7 +320,9 @@ const char *GetCalcFuncStr()
     else if (LEVEL == 2)
         return "Manhattan Dis with Linear conflict";
     else if (LEVEL == 3)
-        return "SWAP";
+        return "Min N-Swaps";
+    else if (LEVEL == 4)
+        return "Dijkstra (In development)";
     else
         return "UNKNOWN";
 }

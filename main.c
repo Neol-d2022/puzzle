@@ -36,7 +36,7 @@ int main(int argc, char **argv)
     AVL_TREE *pq2 = CreatePQ();
     AVL_TREE *pq3 = CreatePQ();
     clock_t t;
-    unsigned int i, min, max, nthreads = 1, x[2];
+    unsigned int i, min, max, nthreads = 1, x[2], h, e, b;
     int r, debug = 0, interact = 1, argci, exiting = 0;
 
     for (argci = 1; argci < argc; argci += 1)
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
         if (strcmp("level", argv[argci]) == 0 && (argci + 1 < argc))
         {
             sscanf(argv[argci + 1], "%u", &LEVEL);
-            if (LEVEL > 3)
+            if (LEVEL > 4)
                 LEVEL = 0;
             argci += 1;
         }
@@ -86,6 +86,11 @@ int main(int argc, char **argv)
         if (strcmp("swap", argv[argci]) == 0)
         {
             LEVEL = 3;
+        }
+
+        if (strcmp("dijk", argv[argci]) == 0)
+        {
+            LEVEL = 4;
         }
 
         if (strcmp("noninteract", argv[argci]) == 0)
@@ -116,7 +121,6 @@ int main(int argc, char **argv)
     w.CalcDis = GetCalcFunc();
     d->h = (w.CalcDis)(d->p, goal, buffers, &(d->b));
     EnqueuePQ(pq, d);
-    free(buffers);
 
     max = min = d->h;
     pthread_rwlock_init(&pqLock, 0);
@@ -176,11 +180,17 @@ restart:
         {
             printf("%u steps\n\n", (w.dOutput)->nparents);
             printPlate(input, stdout);
+            h = (w.CalcDis)(input, goal, buffers, &b);
+            e = (w.dOutput)->nparents + h;
+            printf("(%u/%u) h = %u, e = %u, b = %u\n", 0, (w.dOutput)->nparents, h, e, b);
             printf("\n");
             for (i = 0; i < (w.dOutput)->nparents; i += 1)
             {
                 move(input, ((w.dOutput)->parent)[i], x);
                 printPlate(input, stdout);
+                h = (w.CalcDis)(input, goal, buffers, &b);
+                e = (w.dOutput)->nparents + h - i;
+                printf("(%u/%u) h = %u, e = %u, b = %u\n", 0, (w.dOutput)->nparents, h, e, b);
                 printf("\n");
             }
         }
@@ -188,11 +198,17 @@ restart:
         {
             printf("%u steps\n\n", (w.dOutput)->nparents);
             printPlate(input, stdout);
+            h = (w.CalcDis)(input, goal, buffers, &b);
+            e = (w.dOutput)->nparents + h;
+            printf("(%u/%u) h = %u, e = %u, b = %u\n", 0, (w.dOutput)->nparents, h, e, b);
             fgets(buf, sizeof(buf), stdin);
             for (i = 0; i < (w.dOutput)->nparents; i += 1)
             {
                 move(input, ((w.dOutput)->parent)[i], x);
                 printPlate(input, stdout);
+                h = (w.CalcDis)(input, goal, buffers, &b);
+                e = (w.dOutput)->nparents + h - i;
+                printf("(%u/%u) h = %u, e = %u, b = %u\n", 0, (w.dOutput)->nparents, h, e, b);
                 fgets(buf, sizeof(buf), stdin);
             }
         }
@@ -228,5 +244,6 @@ restart:
     DestroyPQ(pq3);
     //printf("DecisionBankDestory(dbank).\n");
     DecisionBankDestory(dbank);
+    free(buffers);
     return 0;
 }
