@@ -173,7 +173,10 @@ void *doWork(void *arg)
             pthread_mutex_unlock(w->outputLock);
         }
         chId = 0;
-        lastMove = ((d->parent)[d->nparents - 1]);
+        if (d->nparents)
+            lastMove = ((d->parent)[d->nparents - 1]);
+        else
+            lastMove = 0;
 
         // Up
         if (r & 0x8)
@@ -201,7 +204,8 @@ void *doWork(void *arg)
                 findResult = plate;
                 plate = next->p;
                 next->p = findResult;
-                next->h = h; next->b = b;
+                next->h = h;
+                next->b = b;
                 AddParent(next, d, 0x8);
                 children[chId] = next;
                 chId += 1;
@@ -255,7 +259,8 @@ void *doWork(void *arg)
                 findResult = plate;
                 plate = next->p;
                 next->p = findResult;
-                next->h = h; next->b = b;
+                next->h = h;
+                next->b = b;
                 AddParent(next, d, 0x4);
                 children[chId] = next;
                 chId += 1;
@@ -309,7 +314,8 @@ void *doWork(void *arg)
                 findResult = plate;
                 plate = next->p;
                 next->p = findResult;
-                next->h = h; next->b = b;
+                next->h = h;
+                next->b = b;
                 AddParent(next, d, 0x2);
                 children[chId] = next;
                 chId += 1;
@@ -363,7 +369,8 @@ void *doWork(void *arg)
                 findResult = plate;
                 plate = next->p;
                 next->p = findResult;
-                next->h = h; next->b = b;
+                next->h = h;
+                next->b = b;
                 AddParent(next, d, 0x1);
                 children[chId] = next;
                 chId += 1;
