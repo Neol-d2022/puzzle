@@ -40,9 +40,7 @@ static int NewMove(unsigned char *buffers, char *buf, unsigned char **plate, DES
             ;
         next = DecisionBankAdd(w->dbank);
         pthread_rwlock_unlock(w->dbankLock);
-        findResult = *plate;
-        *plate = next->p;
-        next->p = findResult;
+        memcpy(next->p, *plate, PUZZLE_SIZE * PUZZLE_SIZE);
         next->h = h;
         next->b = b;
         AddParent(next, d, dir);
@@ -247,24 +245,78 @@ void *doWork(void *arg)
         if (r & 0x8)
         {
             NewMove(buffers, buf, &plate, d, w, children, &chId, self, i, i - PUZZLE_SIZE, 0x8);
+            if (r & 0x2)
+            {
+                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i - PUZZLE_SIZE, i - PUZZLE_SIZE - 1, 0x2);
+                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i - PUZZLE_SIZE - 1, i - 1, 0x4);
+                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i - 1, i, 0x1);
+                memcpy(d->p, o, PUZZLE_SIZE * PUZZLE_SIZE);
+            }
+            if (r & 0x1)
+            {
+                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i - PUZZLE_SIZE, i - PUZZLE_SIZE + 1, 0x1);
+                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i - PUZZLE_SIZE + 1, i + 1, 0x4);
+                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i + 1, i, 0x2);
+            }
+            memcpy(d->p, o, PUZZLE_SIZE * PUZZLE_SIZE);
         }
 
         // Down
         if (r & 0x4)
         {
             NewMove(buffers, buf, &plate, d, w, children, &chId, self, i, i + PUZZLE_SIZE, 0x4);
+            if (r & 0x2)
+            {
+                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i + PUZZLE_SIZE, i + PUZZLE_SIZE - 1, 0x2);
+                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i + PUZZLE_SIZE - 1, i - 1, 0x8);
+                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i - 1, i, 0x1);
+                memcpy(d->p, o, PUZZLE_SIZE * PUZZLE_SIZE);
+            }
+            if (r & 0x1)
+            {
+                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i + PUZZLE_SIZE, i + PUZZLE_SIZE + 1, 0x1);
+                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i + PUZZLE_SIZE + 1, i + 1, 0x8);
+                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i + 1, i, 0x2);
+            }
+            memcpy(d->p, o, PUZZLE_SIZE * PUZZLE_SIZE);
         }
 
         // Left
         if (r & 0x2)
         {
             NewMove(buffers, buf, &plate, d, w, children, &chId, self, i, i - 1, 0x2);
+            if (r & 0x4)
+            {
+                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i - 1, i - 1 + PUZZLE_SIZE, 0x4);
+                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i - 1 + PUZZLE_SIZE, i + PUZZLE_SIZE, 0x1);
+                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i + PUZZLE_SIZE, i, 0x8);
+                memcpy(d->p, o, PUZZLE_SIZE * PUZZLE_SIZE);
+            }
+            if (r & 0x8){
+                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i - 1, i - 1 - PUZZLE_SIZE, 0x8);
+                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i - 1 - PUZZLE_SIZE, i - PUZZLE_SIZE, 0x1);
+                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i - PUZZLE_SIZE, i, 0x4);
+            }
+            memcpy(d->p, o, PUZZLE_SIZE * PUZZLE_SIZE);
         }
 
         // Right
         if (r & 0x1)
         {
             NewMove(buffers, buf, &plate, d, w, children, &chId, self, i, i + 1, 0x1);
+            if (r & 0x4)
+            {
+                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i + 1, i + 1 + PUZZLE_SIZE, 0x4);
+                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i + 1 + PUZZLE_SIZE, i + PUZZLE_SIZE, 0x2);
+                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i + PUZZLE_SIZE, i, 0x8);
+                memcpy(d->p, o, PUZZLE_SIZE * PUZZLE_SIZE);
+            }
+            if (r & 0x8){
+                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i + 1, i + 1 - PUZZLE_SIZE, 0x8);
+                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i + 1 - PUZZLE_SIZE, i - PUZZLE_SIZE, 0x2);
+                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i - PUZZLE_SIZE, i, 0x4);
+            }
+            memcpy(d->p, o, PUZZLE_SIZE * PUZZLE_SIZE);
         }
 
         while (pthread_rwlock_trywrlock(w->platesLock))
