@@ -314,15 +314,15 @@ CalcDisF GetCalcFunc()
 const char *GetCalcFuncStr()
 {
     if (LEVEL == 0)
-        return "FAST";
+        return "(fast) FAST";
     else if (LEVEL == 1)
-        return "Manhattan Dis w/o Linear conflict";
+        return "(mthd) Manhattan Distance";
     else if (LEVEL == 2)
-        return "Manhattan Dis with Linear conflict";
+        return "(mthl) Manhattan Dis. w/ Linear conflict";
     else if (LEVEL == 3)
-        return "Min N-Swaps";
+        return "(swap) Min N-Swaps";
     else if (LEVEL == 4)
-        return "Dijkstra (In development)";
+        return "(dijk) Dijkstra (In development)";
     else
         return "UNKNOWN";
 }

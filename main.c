@@ -10,6 +10,7 @@
 #include "input.h"
 #include "util.h"
 #include "core.h"
+#include "plates.h"
 
 unsigned int LEVEL = 0;
 unsigned int PUZZLE_SIZE = 3;
@@ -24,14 +25,16 @@ int main(int argc, char **argv)
     pthread_rwlock_t pq3Lock;
     pthread_rwlock_t exitLock;
     pthread_rwlock_t thresLock;
-    pthread_mutex_t outputLock;
+    pthread_rwlock_t platesLock;
     pthread_rwlock_t dbankLock;
+    pthread_mutex_t outputLock;
     unsigned char *buffers;
     unsigned char *goal;
     unsigned char *input;
     pthread_t *th;
     DESICISON *d;
     DBank *dbank = CreateDecisionBank();
+    AVL_TREE *plates = CreatePlates();
     AVL_TREE *pq = CreatePQ();
     AVL_TREE *pq2 = CreatePQ();
     AVL_TREE *pq3 = CreatePQ();
@@ -128,6 +131,7 @@ int main(int argc, char **argv)
     pthread_rwlock_init(&pq3Lock, 0);
     pthread_rwlock_init(&exitLock, 0);
     pthread_rwlock_init(&thresLock, 0);
+    pthread_rwlock_init(&platesLock, 0);
     pthread_mutex_init(&outputLock, 0);
     pthread_rwlock_init(&dbankLock, 0);
     w.pqLock = &pqLock;
@@ -135,11 +139,13 @@ int main(int argc, char **argv)
     w.pq3Lock = &pq3Lock;
     w.exitLock = &exitLock;
     w.thresLock = &thresLock;
+    w.platesLock = &platesLock;
     w.outputLock = &outputLock;
     w.dbankLock = &dbankLock;
     printf("Lock initialized.\n");
     w.goal = goal;
     w.dbank = dbank;
+    w.plates = plates;
     w.pq = pq;
     w.pq2 = pq2;
     w.pq3 = pq3;
@@ -245,12 +251,14 @@ restart:
     pthread_rwlock_destroy(&pq3Lock);
     pthread_rwlock_destroy(&exitLock);
     pthread_rwlock_destroy(&thresLock);
+    pthread_rwlock_destroy(&platesLock);
     pthread_mutex_destroy(&outputLock);
     pthread_rwlock_destroy(&dbankLock);
     //printf("DestroyPQ(pq).\n");
     DestroyPQ(pq);
     DestroyPQ(pq2);
     DestroyPQ(pq3);
+    DestroyPQ(plates);
     //printf("DecisionBankDestory(dbank).\n");
     DecisionBankDestory(dbank);
     free(buffers);

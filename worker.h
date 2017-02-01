@@ -13,6 +13,7 @@ typedef struct
 {
     unsigned char *goal;        //RO
     DBank *dbank;       //RW
+    AVL_TREE *plates;   //RW
     AVL_TREE *pq;       //RW
     AVL_TREE *pq2;      //RW
     AVL_TREE *pq3;      //RW
@@ -25,8 +26,9 @@ typedef struct
     pthread_rwlock_t *pq3Lock;
     pthread_rwlock_t *exitLock;
     pthread_rwlock_t *thresLock;
+    pthread_rwlock_t *platesLock;
     pthread_mutex_t *outputLock;
-    pthread_mutex_t *dbankLock;
+    pthread_rwlock_t *dbankLock;
     CalcDisF CalcDis;
     int debug;
     int interact;

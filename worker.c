@@ -7,8 +7,9 @@
 #include "main.h"
 #include "util.h"
 #include "core.h"
+#include "plates.h"
 
-static int NewMove(unsigned char *buffers, char *buf, unsigned char **plate, DESICISON *d, WORKSPACE *w, DESICISON **children, unsigned int *chId, pthread_t self, unsigned int i, unsigned int j, unsigned int dir, unsigned int lastMove, unsigned int lastMoveDeny)
+static int NewMove(unsigned char *buffers, char *buf, unsigned char **plate, DESICISON *d, WORKSPACE *w, DESICISON **children, unsigned int *chId, pthread_t self, unsigned int i, unsigned int j, unsigned int dir)
 {
     unsigned char *findResult;
     DESICISON *next;
@@ -21,14 +22,19 @@ static int NewMove(unsigned char *buffers, char *buf, unsigned char **plate, DES
         while (pthread_mutex_trylock(w->outputLock))
             ;
         printPlate(*plate, stdout);
-        printf("(%i) Next Desicion generated U.\n", self);
+        printf("(%i) Next Desicion generated %u.\n", self, dir);
         pthread_mutex_unlock(w->outputLock);
     }
 
     h = (w->CalcDis)(*plate, w->goal, buffers, &b);
     nparents = d->nparents + 1;
 
-    if (lastMove != lastMoveDeny)
+    while (pthread_rwlock_tryrdlock(w->platesLock))
+        ;
+    findResult = FindPlate(w->plates, *plate);
+    pthread_rwlock_unlock(w->platesLock);
+
+    if (findResult == 0)
     {
         while (pthread_rwlock_trywrlock(w->dbankLock))
             ;
@@ -79,7 +85,7 @@ void *doWork(void *arg)
     unsigned char *plate, *o;
     size_t s;
     pthread_t self = pthread_self();
-    unsigned int i, rc[2], idle, updater, chId, lastMove;
+    unsigned int i, rc[2], idle, updater, chId;
     int dequeued, r, exiting;
 
     w = (WORKSPACE *)arg;
@@ -233,36 +239,39 @@ void *doWork(void *arg)
             printf("(%i) i=%u x=[%u,%u] f=%u\n", (int)pthread_self(), i, rc[0], rc[1], r);
             pthread_mutex_unlock(w->outputLock);
         }
+
         chId = 0;
-        if (d->nparents)
-            lastMove = ((d->parent)[d->nparents - 1]);
-        else
-            lastMove = 0;
 
         memcpy(o, d->p, PUZZLE_SIZE * PUZZLE_SIZE);
         // Up
         if (r & 0x8)
         {
-            NewMove(buffers, buf, &plate, d, w, children, &chId, self, i, i - PUZZLE_SIZE, 0x8, lastMove, 0x4);
+            NewMove(buffers, buf, &plate, d, w, children, &chId, self, i, i - PUZZLE_SIZE, 0x8);
         }
 
         // Down
         if (r & 0x4)
         {
-            NewMove(buffers, buf, &plate, d, w, children, &chId, self, i, i + PUZZLE_SIZE, 0x4, lastMove, 0x8);
+            NewMove(buffers, buf, &plate, d, w, children, &chId, self, i, i + PUZZLE_SIZE, 0x4);
         }
 
         // Left
         if (r & 0x2)
         {
-            NewMove(buffers, buf, &plate, d, w, children, &chId, self, i, i - 1, 0x2, lastMove, 0x1);
+            NewMove(buffers, buf, &plate, d, w, children, &chId, self, i, i - 1, 0x2);
         }
 
         // Right
         if (r & 0x1)
         {
-            NewMove(buffers, buf, &plate, d, w, children, &chId, self, i, i + 1, 0x1, lastMove, 0x2);
+            NewMove(buffers, buf, &plate, d, w, children, &chId, self, i, i + 1, 0x1);
         }
+
+        while (pthread_rwlock_trywrlock(w->platesLock))
+            ;
+        for (i = 0; i < chId; i += 1)
+            AddPlate(w->plates, (children[i])->p);
+        pthread_rwlock_unlock(w->platesLock);
 
         for (i = 0; i < chId; i += 1)
         {
