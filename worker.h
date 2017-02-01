@@ -31,6 +31,7 @@ typedef struct
     int debug;
     int interact;
     unsigned int thres;
+    unsigned int tests;
     pthread_t firstThread;
 } WORKSPACE;
 

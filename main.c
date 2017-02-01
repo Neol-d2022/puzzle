@@ -150,6 +150,7 @@ int main(int argc, char **argv)
     w.interact = interact;
     w.dOutput = 0;
     w.thres = d->h;
+    w.tests = 0;
     printf("Workspace set up.\n");
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
@@ -169,19 +170,20 @@ restart:
         pthread_join(th[i], NULL);
     }
 
+    w.tests += pq3->count;
     if (w.dOutput)
     {
         d = w.dOutput;
         if (debug)
             printPlate(d->p, stdout);
-        printf("\nSolution found (In %.3lf seconds).\n\n", (clock() - t) / (double)CLOCKS_PER_SEC);
+        printf("\nSolution found (In %.3lf seconds, after %u tests).\n\n", (clock() - t) / (double)CLOCKS_PER_SEC, w.tests);
         D1ToD2(FindInPlate(input, 0), x, x + 1);
         if (interact == 0)
         {
             printf("%u steps\n\n", (w.dOutput)->nparents);
             printPlate(input, stdout);
             h = (w.CalcDis)(input, goal, buffers, &b);
-            e = (w.dOutput)->nparents + h;
+            e = h;
             printf("(%u/%u) h = %u, e = %u, b = %u\n", 0, (w.dOutput)->nparents, h, e, b);
             printf("\n");
             for (i = 0; i < (w.dOutput)->nparents; i += 1)
@@ -189,7 +191,7 @@ restart:
                 move(input, ((w.dOutput)->parent)[i], x);
                 printPlate(input, stdout);
                 h = (w.CalcDis)(input, goal, buffers, &b);
-                e = (w.dOutput)->nparents + h - i - 1;
+                e = h + i + 1;
                 printf("(%u/%u) h = %u, e = %u, b = %u\n", i, (w.dOutput)->nparents, h, e, b);
                 printf("\n");
             }
@@ -199,7 +201,7 @@ restart:
             printf("%u steps\n\n", (w.dOutput)->nparents);
             printPlate(input, stdout);
             h = (w.CalcDis)(input, goal, buffers, &b);
-            e = (w.dOutput)->nparents + h;
+            e = h;
             printf("(%u/%u) h = %u, e = %u, b = %u\n", 0, (w.dOutput)->nparents, h, e, b);
             fgets(buf, sizeof(buf), stdin);
             for (i = 0; i < (w.dOutput)->nparents; i += 1)
@@ -207,25 +209,32 @@ restart:
                 move(input, ((w.dOutput)->parent)[i], x);
                 printPlate(input, stdout);
                 h = (w.CalcDis)(input, goal, buffers, &b);
-                e = (w.dOutput)->nparents + h - i - 1;
-                printf("(%u/%u) h = %u, e = %u, b = %u\n", i, (w.dOutput)->nparents, h, e, b);
+                e = h + i + 1;
+                printf("(%u/%u) h = %u, e = %u, b = %u\n", i + 1, (w.dOutput)->nparents, h, e, b);
                 fgets(buf, sizeof(buf), stdin);
             }
         }
     }
     else
     {
-        w.thres += PUZZLE_SIZE;
+        if (pq2->count == 0)
+        {
+            printf("\nSolution not found (In %.3lf seconds, after %u tests).\n\n", (clock() - t) / (double)CLOCKS_PER_SEC, w.tests);
+        }
+        else
+        {
+            w.thres += PUZZLE_SIZE;
 
-        w.pq = pq2;
-        w.pq2 = pq;
-        pq = w.pq;
-        pq2 = w.pq2;
+            w.pq = pq2;
+            w.pq2 = pq;
+            pq = w.pq;
+            pq2 = w.pq2;
 
-        DecisionBankClearUp(dbank, w.pq3);
-        DestroyPQ(w.pq3);
-        pq3 = w.pq3 = CreatePQ();
-        goto restart;
+            DecisionBankClearUp(dbank, w.pq3);
+            DestroyPQ(w.pq3);
+            pq3 = w.pq3 = CreatePQ();
+            goto restart;
+        }
     }
 
     printf("\nAll threads finished.\n");
