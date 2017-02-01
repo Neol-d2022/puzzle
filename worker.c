@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <math.h>
 
 #include "worker.h"
 #include "main.h"
@@ -15,8 +16,7 @@ static int NewMove(unsigned char *buffers, char *buf, unsigned char **plate, DES
     DESICISON *next;
     unsigned int h, nparents, b;
 
-    memcpy(*plate, d->p, PUZZLE_SIZE * PUZZLE_SIZE);
-    swap(*plate + i, *plate + j);
+    swap((*plate) + i, (*plate) + j);
     if (w->debug)
     {
         while (pthread_mutex_trylock(w->outputLock))
@@ -72,19 +72,124 @@ static int NewMove(unsigned char *buffers, char *buf, unsigned char **plate, DES
     }
 }
 
+static void MakeMoves(unsigned char *buffers, char *buf, unsigned char **plate, DESICISON *d, WORKSPACE *w, DESICISON **children, unsigned int *chId, pthread_t self, unsigned int i, unsigned int level, unsigned int lastDir)
+{
+    unsigned char *o;
+    DESICISON *_d;
+    unsigned int rc[2], r;
+
+    if (level == 0)
+        return;
+    o = (unsigned char *)malloc(PUZZLE_SIZE * PUZZLE_SIZE);
+
+    D1ToD2(i, rc, rc + 1);
+    r = 0;
+    if (rc[0] == 0)
+    {
+        r |= 0x4; //Down
+    }
+    else if (rc[0] == PUZZLE_SIZE - 1)
+    {
+        r |= 0x8; //Up
+    }
+    else
+    {
+        r |= 0xC; //Up & Down
+    }
+
+    if (rc[1] == 0)
+    {
+        r |= 0x1; //Right
+    }
+    else if (rc[1] == PUZZLE_SIZE - 1)
+    {
+        r |= 0x2; //Left
+    }
+    else
+    {
+        r |= 0x3; //Right & Left
+    }
+    if (w->debug)
+    {
+        while (pthread_mutex_trylock(w->outputLock))
+            ;
+        printf("(%i) i=%u x=[%u,%u] f=%u l=%u\n", self, i, rc[0], rc[1], r, level);
+        pthread_mutex_unlock(w->outputLock);
+    }
+
+    memcpy(o, *plate, PUZZLE_SIZE * PUZZLE_SIZE);
+    // Up
+    if (r & 0x8)
+    {
+        if (NewMove(buffers, buf, plate, d, w, children, chId, self, i, i - PUZZLE_SIZE, 0x8) == 0)
+        {
+            if (lastDir != 0x4)
+            {
+                _d = children[(*chId) - 1];
+                MakeMoves(buffers, buf, plate, _d, w, children, chId, self, i - PUZZLE_SIZE, level - 1, 0x8);
+            }
+        }
+        memcpy(*plate, o, PUZZLE_SIZE * PUZZLE_SIZE);
+    }
+
+    // Down
+    if (r & 0x4)
+    {
+        if (NewMove(buffers, buf, plate, d, w, children, chId, self, i, i + PUZZLE_SIZE, 0x4) == 0)
+        {
+            if (lastDir != 0x8)
+            {
+                _d = children[(*chId) - 1];
+                MakeMoves(buffers, buf, plate, _d, w, children, chId, self, i + PUZZLE_SIZE, level - 1, 0x4);
+            }
+        }
+        memcpy(*plate, o, PUZZLE_SIZE * PUZZLE_SIZE);
+    }
+
+    // Left
+    if (r & 0x2)
+    {
+        if (NewMove(buffers, buf, plate, d, w, children, chId, self, i, i - 1, 0x2) == 0)
+        {
+            if (lastDir != 0x1)
+            {
+                _d = children[(*chId) - 1];
+                MakeMoves(buffers, buf, plate, _d, w, children, chId, self, i - 1, level - 1, 0x2);
+            }
+        }
+        memcpy(*plate, o, PUZZLE_SIZE * PUZZLE_SIZE);
+    }
+
+    // Right
+    if (r & 0x1)
+    {
+        if (NewMove(buffers, buf, plate, d, w, children, chId, self, i, i + 1, 0x1) == 0)
+        {
+            if (lastDir != 0x2)
+            {
+                _d = children[(*chId) - 1];
+                MakeMoves(buffers, buf, plate, _d, w, children, chId, self, i + 1, level - 1, 0x1);
+            }
+        }
+        memcpy(*plate, o, PUZZLE_SIZE * PUZZLE_SIZE);
+    }
+
+    free(o);
+}
+
 void *doWork(void *arg)
 {
     char buf[256];
     unsigned char *buffers;
-    DESICISON *d, *children[32];
+    DESICISON *d, **children;
     DBank *dbank;
     AVL_TREE *pq, *pq2, *pq3;
     WORKSPACE *w;
     unsigned char *plate, *o;
     size_t s;
     pthread_t self = pthread_self();
-    unsigned int i, rc[2], idle, updater, chId;
-    int dequeued, r, exiting;
+    unsigned int i, idle, updater, chId;
+    int dequeued, exiting;
 
     w = (WORKSPACE *)arg;
     dbank = w->dbank;
@@ -96,6 +201,7 @@ void *doWork(void *arg)
     plate = (unsigned char *)malloc(PUZZLE_SIZE * PUZZLE_SIZE);
     o = (unsigned char *)malloc(PUZZLE_SIZE * PUZZLE_SIZE);
     buffers = (unsigned char *)malloc(GetBufSize());
+    children = (DESICISON **)malloc(sizeof(*children) * (4 * (unsigned int)pow(3, PUZZLE_SIZE >> 1)));
     while (1)
     {
         while (pthread_rwlock_tryrdlock(w->exitLock))
@@ -202,122 +308,10 @@ void *doWork(void *arg)
             break;
         }
 
-        i = FindInPlate(d->p, 0);
-        D1ToD2(i, rc, rc + 1);
-        r = 0;
-        if (rc[0] == 0)
-        {
-            r |= 0x4; //Down
-        }
-        else if (rc[0] == PUZZLE_SIZE - 1)
-        {
-            r |= 0x8; //Up
-        }
-        else
-        {
-            r |= 0xC; //Up & Down
-        }
-
-        if (rc[1] == 0)
-        {
-            r |= 0x1; //Right
-        }
-        else if (rc[1] == PUZZLE_SIZE - 1)
-        {
-            r |= 0x2; //Left
-        }
-        else
-        {
-            r |= 0x3; //Right & Left
-        }
-        if (w->debug)
-        {
-            while (pthread_mutex_trylock(w->outputLock))
-                ;
-            printf("(%i) i=%u x=[%u,%u] f=%u\n", (int)pthread_self(), i, rc[0], rc[1], r);
-            pthread_mutex_unlock(w->outputLock);
-        }
-
         chId = 0;
-
-        memcpy(o, d->p, PUZZLE_SIZE * PUZZLE_SIZE);
-        // Up
-        if (r & 0x8)
-        {
-            NewMove(buffers, buf, &plate, d, w, children, &chId, self, i, i - PUZZLE_SIZE, 0x8);
-            if (r & 0x2)
-            {
-                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i - PUZZLE_SIZE, i - PUZZLE_SIZE - 1, 0x2);
-                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i - PUZZLE_SIZE - 1, i - 1, 0x4);
-                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i - 1, i, 0x1);
-                memcpy(d->p, o, PUZZLE_SIZE * PUZZLE_SIZE);
-            }
-            if (r & 0x1)
-            {
-                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i - PUZZLE_SIZE, i - PUZZLE_SIZE + 1, 0x1);
-                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i - PUZZLE_SIZE + 1, i + 1, 0x4);
-                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i + 1, i, 0x2);
-            }
-            memcpy(d->p, o, PUZZLE_SIZE * PUZZLE_SIZE);
-        }
-
-        // Down
-        if (r & 0x4)
-        {
-            NewMove(buffers, buf, &plate, d, w, children, &chId, self, i, i + PUZZLE_SIZE, 0x4);
-            if (r & 0x2)
-            {
-                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i + PUZZLE_SIZE, i + PUZZLE_SIZE - 1, 0x2);
-                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i + PUZZLE_SIZE - 1, i - 1, 0x8);
-                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i - 1, i, 0x1);
-                memcpy(d->p, o, PUZZLE_SIZE * PUZZLE_SIZE);
-            }
-            if (r & 0x1)
-            {
-                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i + PUZZLE_SIZE, i + PUZZLE_SIZE + 1, 0x1);
-                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i + PUZZLE_SIZE + 1, i + 1, 0x8);
-                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i + 1, i, 0x2);
-            }
-            memcpy(d->p, o, PUZZLE_SIZE * PUZZLE_SIZE);
-        }
-
-        // Left
-        if (r & 0x2)
-        {
-            NewMove(buffers, buf, &plate, d, w, children, &chId, self, i, i - 1, 0x2);
-            if (r & 0x4)
-            {
-                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i - 1, i - 1 + PUZZLE_SIZE, 0x4);
-                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i - 1 + PUZZLE_SIZE, i + PUZZLE_SIZE, 0x1);
-                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i + PUZZLE_SIZE, i, 0x8);
-                memcpy(d->p, o, PUZZLE_SIZE * PUZZLE_SIZE);
-            }
-            if (r & 0x8){
-                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i - 1, i - 1 - PUZZLE_SIZE, 0x8);
-                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i - 1 - PUZZLE_SIZE, i - PUZZLE_SIZE, 0x1);
-                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i - PUZZLE_SIZE, i, 0x4);
-            }
-            memcpy(d->p, o, PUZZLE_SIZE * PUZZLE_SIZE);
-        }
-
-        // Right
-        if (r & 0x1)
-        {
-            NewMove(buffers, buf, &plate, d, w, children, &chId, self, i, i + 1, 0x1);
-            if (r & 0x4)
-            {
-                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i + 1, i + 1 + PUZZLE_SIZE, 0x4);
-                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i + 1 + PUZZLE_SIZE, i + PUZZLE_SIZE, 0x2);
-                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i + PUZZLE_SIZE, i, 0x8);
-                memcpy(d->p, o, PUZZLE_SIZE * PUZZLE_SIZE);
-            }
-            if (r & 0x8){
-                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i + 1, i + 1 - PUZZLE_SIZE, 0x8);
-                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i + 1 - PUZZLE_SIZE, i - PUZZLE_SIZE, 0x2);
-                NewMove(buffers, buf, &plate, d, w, children, &chId, self, i - PUZZLE_SIZE, i, 0x4);
-            }
-            memcpy(d->p, o, PUZZLE_SIZE * PUZZLE_SIZE);
-        }
+        i = FindInPlate(d->p, 0);
+        memcpy(plate, d->p, PUZZLE_SIZE * PUZZLE_SIZE);
+        MakeMoves(buffers, buf, &plate, d, w, children, &chId, self, i, (PUZZLE_SIZE >> 1), 0);
 
         while (pthread_rwlock_trywrlock(w->platesLock))
             ;
@@ -373,5 +367,6 @@ void *doWork(void *arg)
     free(plate);
     free(o);
     free(buffers);
+    free(children);
     return 0;
 }
