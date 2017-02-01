@@ -141,6 +141,8 @@ unsigned int CalcDis_mhtl(unsigned char *current, const unsigned char *goal, uns
                 {
                     if (k - j <= max(p[(i * PUZZLE_SIZE) + j], p[(i * PUZZLE_SIZE) + k]))
                     {
+                        p[i] += 1;
+                        p[j] += 1;
                         g += 2;
                         break;
                     }
@@ -158,6 +160,8 @@ unsigned int CalcDis_mhtl(unsigned char *current, const unsigned char *goal, uns
 
                     if (k - j <= max(p[(j * PUZZLE_SIZE) + i], p[(k * PUZZLE_SIZE) + i]))
                     {
+                        p[i] += 1;
+                        p[j] += 1;
                         g += 2;
                         break;
                     }
