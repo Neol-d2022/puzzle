@@ -24,15 +24,29 @@ void DestroyPlates(AVL_TREE *plates)
     AVL_Destroy(plates);
 }
 
-void AddPlate(AVL_TREE *plates, unsigned char *p)
-{
-    unsigned char *q = (unsigned char *)malloc(PUZZLE_SIZE * PUZZLE_SIZE);
-    memcpy(q, p, PUZZLE_SIZE * PUZZLE_SIZE);
-    if (AVL_Insert(plates, q) == 0)
-        free(q);
-}
-
 unsigned char *FindPlate(AVL_TREE *plates, unsigned char *key)
 {
     return (unsigned char *)AVL_Retrieve(plates, key);
+}
+
+int AddPlate(AVL_TREE *plates, unsigned char *p, unsigned int np)
+{
+    unsigned char *q = (unsigned char *)malloc(PUZZLE_SIZE * PUZZLE_SIZE + sizeof(unsigned int));
+    unsigned char *r;
+
+    memcpy(q, p, PUZZLE_SIZE * PUZZLE_SIZE);
+    if (AVL_Insert(plates, q) == 0)
+    {
+        free(q);
+        r = FindPlate(plates, p);
+        if (*(unsigned int *)(r + PUZZLE_SIZE * PUZZLE_SIZE) > np)
+        {
+            *(unsigned int *)(r + PUZZLE_SIZE * PUZZLE_SIZE) = np;
+            return 0;
+        }
+        else
+            return 1;
+    }
+    else
+        return 0;
 }

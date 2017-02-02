@@ -123,6 +123,7 @@ int main(int argc, char **argv)
     memcpy(d->p, input, PUZZLE_SIZE * PUZZLE_SIZE);
     w.CalcDis = GetCalcFunc();
     d->h = (w.CalcDis)(d->p, goal, buffers, &(d->b));
+    AddPlate(plates, d->p, d->nparents);
     EnqueuePQ(pq, d);
 
     max = min = d->h;

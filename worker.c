@@ -22,7 +22,7 @@ static int NewMove(unsigned char *buffers, char *buf, unsigned char **plate, DES
         while (pthread_mutex_trylock(w->outputLock))
             ;
         printPlate(*plate, stdout);
-        printf("(%i) Next Desicion generated %u.\n", self, dir);
+        printf("(%u) Next Desicion generated %u.\n", (unsigned int)self, dir);
         pthread_mutex_unlock(w->outputLock);
     }
 
@@ -32,6 +32,9 @@ static int NewMove(unsigned char *buffers, char *buf, unsigned char **plate, DES
     while (pthread_rwlock_tryrdlock(w->platesLock))
         ;
     findResult = FindPlate(w->plates, *plate);
+    if (findResult)
+        if (*(unsigned int *)(findResult + PUZZLE_SIZE * PUZZLE_SIZE) <= nparents)
+            findResult = 0;
     pthread_rwlock_unlock(w->platesLock);
 
     if (findResult == 0)
@@ -50,7 +53,7 @@ static int NewMove(unsigned char *buffers, char *buf, unsigned char **plate, DES
         {
             while (pthread_mutex_trylock(w->outputLock))
                 ;
-            printf("(%i) Accepted (h=%u n=%u).\n\n", self, next->h, next->nparents);
+            printf("(%u) Accepted (h=%u n=%u).\n\n", (unsigned int)self, next->h, next->nparents);
             if (w->interact && w->firstThread == self)
                 fgets(buf, sizeof(buf), stdin);
             pthread_mutex_unlock(w->outputLock);
@@ -63,7 +66,7 @@ static int NewMove(unsigned char *buffers, char *buf, unsigned char **plate, DES
         {
             while (pthread_mutex_trylock(w->outputLock))
                 ;
-            printf("(%i) Rejected (h=%u n=%u).\n\n", (int)pthread_self(), h, nparents);
+            printf("(%u) Rejected (h=%u n=%u).\n\n", (unsigned int)self, h, nparents);
             if (w->interact && w->firstThread == self)
                 fgets(buf, sizeof(buf), stdin);
             pthread_mutex_unlock(w->outputLock);
@@ -113,7 +116,7 @@ static void MakeMoves(unsigned char *buffers, char *buf, unsigned char **plate, 
     {
         while (pthread_mutex_trylock(w->outputLock))
             ;
-        printf("(%i) i=%u x=[%u,%u] f=%u l=%u\n", self, i, rc[0], rc[1], r, level);
+        printf("(%u) i=%u x=[%u,%u] f=%u l=%u\n", (unsigned int)self, i, rc[0], rc[1], r, level);
         pthread_mutex_unlock(w->outputLock);
     }
 
@@ -126,7 +129,13 @@ static void MakeMoves(unsigned char *buffers, char *buf, unsigned char **plate, 
             if (lastDir != 0x4)
             {
                 _d = children[(*chId) - 1];
-                MakeMoves(buffers, buf, plate, _d, w, children, chId, self, i - PUZZLE_SIZE, level - 1, 0x8);
+                if (_d->h + d->nparents > d->h + d->nparents)
+                {
+                    if (level > 2)
+                        MakeMoves(buffers, buf, plate, _d, w, children, chId, self, i - PUZZLE_SIZE, level - 2, 0x8);
+                }
+                else
+                    MakeMoves(buffers, buf, plate, _d, w, children, chId, self, i - PUZZLE_SIZE, level - 1, 0x8);
             }
         }
         memcpy(*plate, o, PUZZLE_SIZE * PUZZLE_SIZE);
@@ -140,7 +149,13 @@ static void MakeMoves(unsigned char *buffers, char *buf, unsigned char **plate, 
             if (lastDir != 0x8)
             {
                 _d = children[(*chId) - 1];
-                MakeMoves(buffers, buf, plate, _d, w, children, chId, self, i + PUZZLE_SIZE, level - 1, 0x4);
+                if (_d->h + d->nparents > d->h + d->nparents)
+                {
+                    if (level > 2)
+                        MakeMoves(buffers, buf, plate, _d, w, children, chId, self, i + PUZZLE_SIZE, level - 2, 0x4);
+                }
+                else
+                    MakeMoves(buffers, buf, plate, _d, w, children, chId, self, i + PUZZLE_SIZE, level - 1, 0x4);
             }
         }
         memcpy(*plate, o, PUZZLE_SIZE * PUZZLE_SIZE);
@@ -154,7 +169,13 @@ static void MakeMoves(unsigned char *buffers, char *buf, unsigned char **plate, 
             if (lastDir != 0x1)
             {
                 _d = children[(*chId) - 1];
-                MakeMoves(buffers, buf, plate, _d, w, children, chId, self, i - 1, level - 1, 0x2);
+                if (_d->h + d->nparents > d->h + d->nparents)
+                {
+                    if (level > 2)
+                        MakeMoves(buffers, buf, plate, _d, w, children, chId, self, i - 1, level - 2, 0x2);
+                }
+                else
+                    MakeMoves(buffers, buf, plate, _d, w, children, chId, self, i - 1, level - 1, 0x2);
             }
         }
         memcpy(*plate, o, PUZZLE_SIZE * PUZZLE_SIZE);
@@ -168,7 +189,13 @@ static void MakeMoves(unsigned char *buffers, char *buf, unsigned char **plate, 
             if (lastDir != 0x2)
             {
                 _d = children[(*chId) - 1];
-                MakeMoves(buffers, buf, plate, _d, w, children, chId, self, i + 1, level - 1, 0x1);
+                if (_d->h + d->nparents > d->h + d->nparents)
+                {
+                    if (level > 2)
+                        MakeMoves(buffers, buf, plate, _d, w, children, chId, self, i + 1, level - 2, 0x1);
+                }
+                else
+                    MakeMoves(buffers, buf, plate, _d, w, children, chId, self, i + 1, level - 1, 0x1);
             }
         }
         memcpy(*plate, o, PUZZLE_SIZE * PUZZLE_SIZE);
@@ -201,7 +228,7 @@ void *doWork(void *arg)
     plate = (unsigned char *)malloc(PUZZLE_SIZE * PUZZLE_SIZE);
     o = (unsigned char *)malloc(PUZZLE_SIZE * PUZZLE_SIZE);
     buffers = (unsigned char *)malloc(GetBufSize());
-    children = (DESICISON **)malloc(sizeof(*children) * (4 * (unsigned int)pow(3, PUZZLE_SIZE >> 1)));
+    children = (DESICISON **)malloc(sizeof(*children) * (4 * (unsigned int)pow(3, (PUZZLE_SIZE >> 1) + 1)));
     while (1)
     {
         while (pthread_rwlock_tryrdlock(w->exitLock))
@@ -214,7 +241,7 @@ void *doWork(void *arg)
             {
                 while (pthread_mutex_trylock(w->outputLock))
                     ;
-                printf("(%i) Exiting (Flag)\n\n", (int)pthread_self());
+                printf("(%u) Exiting (Flag)\n\n", (unsigned int)self);
                 pthread_mutex_unlock(w->outputLock);
             }
             break;
@@ -243,7 +270,7 @@ void *doWork(void *arg)
             while (pthread_mutex_trylock(w->outputLock))
                 ;
             printPlate(d->p, stdout);
-            printf("(%i) Dequeued(h=%u n=%u).\n\n", (int)pthread_self(), d->h, d->nparents);
+            printf("(%u) Dequeued(h=%u n=%u).\n\n", (unsigned int)self, d->h, d->nparents);
             if (w->interact)
                 fgets(buf, sizeof(buf), stdin);
             pthread_mutex_unlock(w->outputLock);
@@ -302,7 +329,7 @@ void *doWork(void *arg)
             {
                 while (pthread_mutex_trylock(w->outputLock))
                     ;
-                printf("(%i) Exiting (Found Solution)\n\n", (int)pthread_self());
+                printf("(%u) Exiting (Found Solution)\n\n", (unsigned int)self);
                 pthread_mutex_unlock(w->outputLock);
             }
             break;
@@ -311,35 +338,44 @@ void *doWork(void *arg)
         chId = 0;
         i = FindInPlate(d->p, 0);
         memcpy(plate, d->p, PUZZLE_SIZE * PUZZLE_SIZE);
-        MakeMoves(buffers, buf, &plate, d, w, children, &chId, self, i, (PUZZLE_SIZE >> 1), 0);
-
-        while (pthread_rwlock_trywrlock(w->platesLock))
-            ;
-        for (i = 0; i < chId; i += 1)
-            AddPlate(w->plates, (children[i])->p);
-        pthread_rwlock_unlock(w->platesLock);
+        MakeMoves(buffers, buf, &plate, d, w, children, &chId, self, i, (PUZZLE_SIZE >> 1) + 1, 0);
 
         for (i = 0; i < chId; i += 1)
         {
-            while (pthread_rwlock_tryrdlock(w->thresLock))
+            while (pthread_rwlock_trywrlock(w->platesLock))
                 ;
-            if ((children[i])->h + (children[i])->nparents <= w->thres)
+            if (AddPlate(w->plates, (children[i])->p, (children[i])->nparents) == 0)
             {
-                while (pthread_rwlock_trywrlock(w->pqLock))
+                pthread_rwlock_unlock(w->platesLock);
+                while (pthread_rwlock_tryrdlock(w->thresLock))
                     ;
-                EnqueuePQ(pq, children[i]);
-                pthread_rwlock_unlock(w->pqLock);
+                if ((children[i])->h + (children[i])->nparents <= w->thres)
+                {
+                    pthread_rwlock_unlock(w->thresLock);
+                    while (pthread_rwlock_trywrlock(w->pqLock))
+                        ;
+                    EnqueuePQ(pq, children[i]);
+                    pthread_rwlock_unlock(w->pqLock);
+                }
+                else
+                {
+                    pthread_rwlock_unlock(w->thresLock);
+                    while (pthread_rwlock_trywrlock(w->pq2Lock))
+                        ;
+                    EnqueuePQ(pq2, children[i]);
+                    pthread_rwlock_unlock(w->pq2Lock);
+                }
             }
             else
             {
-                while (pthread_rwlock_trywrlock(w->pq2Lock))
+                pthread_rwlock_unlock(w->platesLock);
+                while (pthread_rwlock_trywrlock(w->dbankLock))
                     ;
-                EnqueuePQ(pq2, children[i]);
-                pthread_rwlock_unlock(w->pq2Lock);
+                AVL_Delete(dbank, children[i]);
+                DeInitD(children[i]);
+                pthread_rwlock_unlock(w->dbankLock);
             }
-            pthread_rwlock_unlock(w->thresLock);
         }
-
         while (pthread_rwlock_trywrlock(w->pq3Lock))
             ;
         EnqueuePQ(pq3, d);
@@ -349,7 +385,7 @@ void *doWork(void *arg)
         {
             while (pthread_rwlock_tryrdlock(w->pq3Lock))
                 ;
-            if (pq3->count >= 0xFFFF * PUZZLE_SIZE)
+            if (pq3->count >= 0xFFF * PUZZLE_SIZE)
             {
                 w->tests += (w->pq3)->count;
                 pthread_rwlock_unlock(w->pq3Lock);

@@ -6,7 +6,7 @@
 int cmpPlate(void *a, void *b);
 AVL_TREE *CreatePlates(void);
 void DestroyPlates(AVL_TREE *plates);
-void AddPlate(AVL_TREE *plates, unsigned char *p);
+int AddPlate(AVL_TREE *plates, unsigned char *p, unsigned int np);
 unsigned char *FindPlate(AVL_TREE *plates, unsigned char *key);
 
 #endif
