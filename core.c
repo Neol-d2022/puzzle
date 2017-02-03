@@ -6,6 +6,7 @@
 #include "util.h"
 #include "main.h"
 #include "avl.h"
+#include "xy.h"
 #include "dijkstra.h"
 
 static unsigned int max(unsigned int a, unsigned int b)
@@ -311,6 +312,8 @@ CalcDisF GetCalcFunc()
         return CalcDis_swap;
     else if (LEVEL == 4)
         return CalcDis_djst;
+    else if (LEVEL == 5)
+        return CalcDis_xymn;
     else
         return (CalcDisF)0;
 }
@@ -327,6 +330,8 @@ const char *GetCalcFuncStr()
         return "(swap) Min N-Swaps";
     else if (LEVEL == 4)
         return "(dijk) Dijkstra (In development)";
+    else if (LEVEL == 5)
+        return "(xymn) X-Y min moves (In development)";
     else
         return "UNKNOWN";
 }

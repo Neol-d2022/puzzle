@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 static NODE *_insert(AVL_TREE *tree, NODE *root, NODE *newPtr, int *taller, int *success);
-static NODE *_delete(AVL_TREE *tree, NODE *root, void *dltKey, int *shorter, int *success);
+static NODE *_delete(AVL_TREE *tree, NODE *root, void *dltKey, int *shorter, int *success, int *freed);
 static void *_retrieve(AVL_TREE *tree, void *keyPtr, NODE *root);
 static void _traversal(NODE *root, void *paramInOut, void (*process)(void *dataPtr, void *paramInOut));
 static void _destroy(NODE *root, void (*dataFreeMemFunc)(void *dataPtr));
@@ -237,7 +237,8 @@ int AVL_Delete(AVL_TREE *tree, void *dltKey)
 {
     int shorter = 0;
     int success = 0;
-    NODE *newRoot = _delete(tree, tree->root, dltKey, &shorter, &success);
+	int freed = 0;
+    NODE *newRoot = _delete(tree, tree->root, dltKey, &shorter, &success, &freed);
 
     if (success)
     {
@@ -247,7 +248,7 @@ int AVL_Delete(AVL_TREE *tree, void *dltKey)
     return success;
 }
 
-static NODE *_delete(AVL_TREE *tree, NODE *root, void *dltKey, int *shorter, int *success)
+static NODE *_delete(AVL_TREE *tree, NODE *root, void *dltKey, int *shorter, int *success, int *freed)
 {
     NODE *dltPtr;
     NODE *exchPtr;
@@ -262,13 +263,13 @@ static NODE *_delete(AVL_TREE *tree, NODE *root, void *dltKey, int *shorter, int
 
     if (tree->compare(dltKey, root->dataPtr) < 0)
     {
-	root->left = _delete(tree, root->left, dltKey, shorter, success);
+	root->left = _delete(tree, root->left, dltKey, shorter, success, freed);
 	if (*shorter)
 	    root = dltRightBal(root, shorter);
     }
     else if (tree->compare(dltKey, root->dataPtr) > 0)
     {
-	root->right = _delete(tree, root->right, dltKey, shorter, success);
+	root->right = _delete(tree, root->right, dltKey, shorter, success, freed);
 	if (*shorter)
 	    root = dltLeftBal(root, shorter);
     }
@@ -281,8 +282,12 @@ static NODE *_delete(AVL_TREE *tree, NODE *root, void *dltKey, int *shorter, int
 	    *success = 1;
 	    *shorter = 1;
 	    if (tree->dataFreeMemFunc)
-		tree->dataFreeMemFunc(dltPtr->dataPtr);
-	    free(dltPtr);
+			if(!*freed)
+			{
+				tree->dataFreeMemFunc(dltPtr->dataPtr);
+				*freed = 1;
+			}
+		free(dltPtr);
 	    return newRoot;
 	}
 	else if (!root->left)
@@ -291,8 +296,12 @@ static NODE *_delete(AVL_TREE *tree, NODE *root, void *dltKey, int *shorter, int
 	    *success = 1;
 	    *shorter = 1;
 	    if (tree->dataFreeMemFunc)
-		tree->dataFreeMemFunc(dltPtr->dataPtr);
-	    free(dltPtr);
+			if(!*freed)
+			{
+				tree->dataFreeMemFunc(dltPtr->dataPtr);
+				*freed = 1;
+			}
+		free(dltPtr);
 	    return newRoot;
 	}
 	else
@@ -301,9 +310,13 @@ static NODE *_delete(AVL_TREE *tree, NODE *root, void *dltKey, int *shorter, int
 	    while (exchPtr->right)
 		exchPtr = exchPtr->right;
 	    if (tree->dataFreeMemFunc)
-		tree->dataFreeMemFunc(root->dataPtr);
+			if(!*freed)
+			{
+				tree->dataFreeMemFunc(dltPtr->dataPtr);
+				*freed = 1;
+			}
 	    root->dataPtr = exchPtr->dataPtr;
-	    root->left = _delete(tree, root->left, exchPtr->dataPtr, shorter, success);
+	    root->left = _delete(tree, root->left, exchPtr->dataPtr, shorter, success, freed);
 	    if (*shorter)
 		root = dltRightBal(root, shorter);
 	}

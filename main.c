@@ -66,40 +66,26 @@ int main(int argc, char **argv)
         if (strcmp("level", argv[argci]) == 0 && (argci + 1 < argc))
         {
             sscanf(argv[argci + 1], "%u", &LEVEL);
-            if (LEVEL > 4)
+            if (LEVEL > 5)
                 LEVEL = 0;
             argci += 1;
         }
 
         if (strcmp("fast", argv[argci]) == 0)
-        {
             LEVEL = 0;
-        }
-
         if (strcmp("mhtd", argv[argci]) == 0)
-        {
             LEVEL = 1;
-        }
-
         if (strcmp("mhtl", argv[argci]) == 0)
-        {
             LEVEL = 2;
-        }
-
         if (strcmp("swap", argv[argci]) == 0)
-        {
             LEVEL = 3;
-        }
-
         if (strcmp("dijk", argv[argci]) == 0)
-        {
             LEVEL = 4;
-        }
+        if (strcmp("xymn", argv[argci]) == 0)
+            LEVEL = 5;
 
         if (strcmp("noninteract", argv[argci]) == 0)
-        {
             interact = 0;
-        }
     }
 
     goal = (unsigned char *)malloc(PUZZLE_SIZE * PUZZLE_SIZE);
