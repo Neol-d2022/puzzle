@@ -37,7 +37,6 @@ int AddPlate(AVL_TREE *plates, unsigned char *p, unsigned int np)
     memcpy(q, p, PUZZLE_SIZE * PUZZLE_SIZE);
     if (AVL_Insert(plates, q) == 0)
     {
-        free(q);
         r = FindPlate(plates, p);
         if (*(unsigned int *)(r + PUZZLE_SIZE * PUZZLE_SIZE) > np)
         {
