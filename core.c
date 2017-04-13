@@ -9,11 +9,6 @@
 #include "xy.h"
 #include "dijkstra.h"
 
-static unsigned int max(unsigned int a, unsigned int b)
-{
-    return (a > b) ? a : b;
-}
-
 unsigned int CalcDis_swap(unsigned char *current, const unsigned char *goal, unsigned char *buffers, unsigned int *blankDis)
 {
     unsigned int *g = (unsigned int *)buffers;
@@ -140,10 +135,8 @@ unsigned int CalcDis_mhtl(unsigned char *current, const unsigned char *goal, uns
                     (d[(i * PUZZLE_SIZE) + j] == 1 && d[(i * PUZZLE_SIZE) + k] == 0) ||
                     (d[(i * PUZZLE_SIZE) + j] == 0 && d[(i * PUZZLE_SIZE) + k] == 2))
                 {
-                    if (k - j <= max(p[(i * PUZZLE_SIZE) + j], p[(i * PUZZLE_SIZE) + k]))
+                    if (k - j < p[(i * PUZZLE_SIZE) + j] + p[(i * PUZZLE_SIZE) + k])
                     {
-                        p[i] += 1;
-                        p[j] += 1;
                         g += 2;
                         break;
                     }
@@ -159,10 +152,8 @@ unsigned int CalcDis_mhtl(unsigned char *current, const unsigned char *goal, uns
                     (d[(j * PUZZLE_SIZE) + i] == 0 && d[(k * PUZZLE_SIZE) + i] == 8))
                 {
 
-                    if (k - j <= max(p[(j * PUZZLE_SIZE) + i], p[(k * PUZZLE_SIZE) + i]))
+                    if (k - j < p[(j * PUZZLE_SIZE) + i] + p[(k * PUZZLE_SIZE) + i])
                     {
-                        p[i] += 1;
-                        p[j] += 1;
                         g += 2;
                         break;
                     }
@@ -262,7 +253,7 @@ unsigned int CalcDis_fast(unsigned char *current, const unsigned char *goal, uns
     unsigned int *r = (unsigned int *)(buffers) + PUZZLE_SIZE * PUZZLE_SIZE;
     unsigned int i, j, k, m, n, x[2];
 
-    CalcDis_mhtl(current, goal, buffers, blankDis);
+    CalcDis_mhtd(current, goal, buffers, blankDis);
 
     for (i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; i += 1)
     {
